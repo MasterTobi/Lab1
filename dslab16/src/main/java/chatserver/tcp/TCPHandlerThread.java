@@ -24,22 +24,22 @@ public class TCPHandlerThread implements Runnable{
 	@Override
 	public void run() {
 		
-		try {
+		try (	// try with resources
 			// prepare the input reader for the socket
 			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			// prepare the writer for responding to clients requests
 			PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-			
+		)
+		{	
 			String request;
+		
 			// read client requests
-			while ((request = reader.readLine()) != null) {
-
-				//System.out.println("Client sent the following request: "
-				//		+ request);
+			while ( (user == null || user.isActive()) && (request = reader.readLine()) != null) {
 				
 				String[] parts = request.split("\\s");
 				
-				if (parts.length == 3 && request.startsWith("login!")) {
+				/* login command */
+				if (parts.length == 3 && request.startsWith("!login")) {
 					try {
 						user = chatserver.loginUser(parts[1],parts[2]);
 						
@@ -49,14 +49,22 @@ public class TCPHandlerThread implements Runnable{
 						writer.println(e.getMessage());
 					}
 				}
+				
+				// note that login command check is before
+				if(user == null)
+				{
+					writer.println("Not logged in.");
+				}
+				
+				if (parts.length == 1 && request.startsWith("!logout"))
+				{	
+					user.setActive(false);
+					writer.println("Successfully logged out.");
+				}
 			}
-			
-			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 	}
-
 }

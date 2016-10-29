@@ -39,7 +39,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 
 		
 		getAllUsers();
-		
 	}
 	
 	public void getAllUsers()
@@ -52,7 +51,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 		{
 			User u = new User();
 			u.setUsername(username.substring(0, username.lastIndexOf('.')));
-			System.out.println(u.getUsername());
 			u.setPassword(userConfig.getString(username));
 			u.setActive(false);
 			userList.add(u);
@@ -85,23 +83,8 @@ public class Chatserver implements IChatserverCli, Runnable {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	/**
-	 * @param args
-	 *            the first argument is the name of the {@link Chatserver}
-	 *            component
-	 */
-	public static void main(String[] args) {
-		Chatserver chatserver = new Chatserver(args[0],
-				new Config("chatserver"), System.in, System.out);
-		// TODO: start the chatserver
-		new Thread(chatserver).start();
-	}
-
 	
 	public User loginUser(String username, String password) throws LoginException{
-		
-		System.out.println("in login");
 		
 		for(User u:userList)
 		{
@@ -113,13 +96,34 @@ public class Chatserver implements IChatserverCli, Runnable {
 				}
 				else
 				{
-					u.setActive(true);
-					return u;
+					if(u.getPassword().equals(password))
+					{
+						u.setActive(true);
+						return u;
+					}else
+					{
+						throw new LoginException("Wrong username or password.");
+					}
 				}
 			}
 		}
 		
 		throw new LoginException("Wrong username or password.");
+	}
+	
+	
+	
+	
+	/**
+	 * @param args
+	 *            the first argument is the name of the {@link Chatserver}
+	 *            component
+	 */
+	public static void main(String[] args) {
+		Chatserver chatserver = new Chatserver(args[0],
+				new Config("chatserver"), System.in, System.out);
+		// TODO: start the chatserver
+		new Thread(chatserver).start();
 	}
 
 }
