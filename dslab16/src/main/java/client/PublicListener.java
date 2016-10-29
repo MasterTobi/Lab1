@@ -7,9 +7,11 @@ import java.net.Socket;
 
 public class PublicListener implements Runnable{
 	
+	Client client;
 	Socket socket;
 	private BufferedReader serverReader;
 	private PrintStream userResponseStream;
+	private String lastMessage;
 	
 	public PublicListener(Socket socket, BufferedReader serverReader, PrintStream userResponseStream)
 	{
@@ -18,6 +20,13 @@ public class PublicListener implements Runnable{
 		this.userResponseStream = userResponseStream;
 	}
 	
+	public PublicListener(Client client, Socket socket, BufferedReader serverReader, PrintStream userResponseStream) {
+		this.client = client;
+		this.socket = socket;
+		this.serverReader = serverReader;
+		this.userResponseStream = userResponseStream;
+	}
+
 	@Override
 	public void run() {
 		
@@ -27,6 +36,11 @@ public class PublicListener implements Runnable{
 			while(!socket.isClosed() && Thread.interrupted() == false && (message = serverReader.readLine()) != null)
 			{
 				userResponseStream.println(message);
+				if(client != null)
+				{
+					client.setLastMessage(message);
+				}
+				lastMessage = message;
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -34,4 +48,7 @@ public class PublicListener implements Runnable{
 		}
 	}
 
+	public String getLastMessage() {
+		return lastMessage;
+	}
 }

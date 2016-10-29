@@ -177,8 +177,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 	{
 		return userList;
 	}
-	
-	
+
 	/**
 	 * @param args
 	 *            the first argument is the name of the {@link Chatserver}

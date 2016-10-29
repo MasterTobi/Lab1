@@ -24,6 +24,7 @@ public class Client implements IClientCli, Runnable {
 	private BufferedReader serverReader;
 	private PrintWriter serverWriter;
 	private Thread publicListenerThread;
+	private String lastMessage;
 
 	/**
 	 * @param componentName
@@ -83,7 +84,7 @@ public class Client implements IClientCli, Runnable {
 			// read server response
 			response  = serverReader.readLine();
 			
-			publicListenerThread = new Thread(new PublicListener(socket, serverReader, userResponseStream));
+			publicListenerThread = new Thread(new PublicListener(this, socket, serverReader, userResponseStream));
 			publicListenerThread.start();
 
 		} catch (IOException e) {
@@ -173,8 +174,13 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String lastMsg() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		
+		if(lastMessage == null)
+		{
+			return "No message received!";
+		}
+		
+		return lastMessage;
 	}
 
 	@Override
@@ -184,6 +190,10 @@ public class Client implements IClientCli, Runnable {
 		return null;
 	}
 
+	public void setLastMessage(String lastMessage) {
+		this.lastMessage = lastMessage;
+	}
+	
 	/**
 	 * @param args
 	 *            the first argument is the name of the {@link Client} component
