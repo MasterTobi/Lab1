@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import chatserver.tcp.TCPListenerThread;
@@ -62,6 +64,15 @@ public class Chatserver implements IChatserverCli, Runnable {
 			u.setActive(false);
 			userList.add(u);
 		}
+		
+		/* sort list alphabetically */
+		
+		 Collections.sort(userList, new Comparator<User>() {
+		        @Override
+		        public int compare(User u1, User u2) {
+		            return u1.getUsername().compareToIgnoreCase(u2.getUsername());
+		        }
+		    });
 	}
 
 	@Override
