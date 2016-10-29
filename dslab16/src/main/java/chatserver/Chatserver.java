@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chatserver.tcp.TCPListenerThread;
+import cli.Command;
+import cli.Shell;
 import entity.User;
 import util.Config;
 
@@ -15,10 +17,12 @@ public class Chatserver implements IChatserverCli, Runnable {
 
 	private String componentName;
 	private Config config;
+	private Shell shell;
 	private InputStream userRequestStream;
 	private PrintStream userResponseStream;
-	private ServerSocket serverSocket;
+	private ServerSocket serverSocketTCP;
 	private List<User> userList;
+	private Thread tcpListenerThread;
 
 	/**
 	 * @param componentName
@@ -39,9 +43,12 @@ public class Chatserver implements IChatserverCli, Runnable {
 
 		
 		getAllUsers();
+		
+		shell = new Shell(componentName, userRequestStream, userResponseStream);
+		shell.register(this);
 	}
 	
-	public void getAllUsers()
+	private void getAllUsers()
 	{
 		Config userConfig = new Config("user");
 		
@@ -63,13 +70,18 @@ public class Chatserver implements IChatserverCli, Runnable {
 		
 		// create and start a new TCP ServerSocket
 		try {
-			serverSocket = new ServerSocket(config.getInt("tcp.port"));
+			
+			serverSocketTCP = new ServerSocket(config.getInt("tcp.port"));
+			
 			// handle incoming connections from client in a separate thread
-			new Thread(new TCPListenerThread(serverSocket,this)).start();
+			tcpListenerThread = new Thread(new TCPListenerThread(serverSocketTCP,this));
+			tcpListenerThread.start();
+			
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot listen on TCP port.", e);
 		}
 		
+		new Thread(shell).start();
 	}
 
 	@Override
@@ -79,8 +91,28 @@ public class Chatserver implements IChatserverCli, Runnable {
 	}
 
 	@Override
+	@Command
 	public String exit() throws IOException {
 		// TODO Auto-generated method stub
+		
+		/* close threads responsible for communicating with clients */
+		if(userList != null){
+			for(User u: userList)
+			{
+				if(u.getSocket() != null)
+				{
+					u.getSocket().close();
+				}
+			}
+		}
+		
+		// close TCP thread
+		serverSocketTCP.close();
+		
+		//TODO close UDP Thread
+		
+		//TODO exit
+		
 		return null;
 	}
 	
@@ -111,7 +143,10 @@ public class Chatserver implements IChatserverCli, Runnable {
 		throw new LoginException("Wrong username or password.");
 	}
 	
-	
+	public List<User> GetUserList()
+	{
+		return userList;
+	}
 	
 	
 	/**
@@ -123,7 +158,8 @@ public class Chatserver implements IChatserverCli, Runnable {
 		Chatserver chatserver = new Chatserver(args[0],
 				new Config("chatserver"), System.in, System.out);
 		// TODO: start the chatserver
-		new Thread(chatserver).start();
+		Thread chatserverThread = new Thread(chatserver);
+		chatserverThread.start();
 	}
 
 }

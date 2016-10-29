@@ -34,32 +34,65 @@ public class TCPHandlerThread implements Runnable{
 			String request;
 		
 			// read client requests
-			while ( (user == null || user.isActive()) && (request = reader.readLine()) != null) {
+			while (socket.isClosed() == false && Thread.interrupted() == false && (request = reader.readLine()) != null) {
 				
 				String[] parts = request.split("\\s");
 				
-				/* login command */
-				if (parts.length == 3 && request.startsWith("!login")) {
-					try {
-						user = chatserver.loginUser(parts[1],parts[2]);
-						
-						writer.println("Successfully logged in.");
-						
-					} catch (LoginException e) {
-						writer.println(e.getMessage());
-					}
-				}
-				
-				// note that login command check is before
-				if(user == null)
+				if(parts.length >= 1)
 				{
-					writer.println("Not logged in.");
+					/* login command */
+					if (request.startsWith("!login") && parts.length == 3) {
+						try {
+							user = chatserver.loginUser(parts[1],parts[2]);
+							user.setSocket(socket);
+							
+							writer.println("Successfully logged in.");
+							
+						} catch (LoginException e) {
+							writer.println(e.getMessage());
+						}
+					}
+					
+					/* logout command */
+					else if (request.startsWith("!logout"))
+					{	
+						user.setActive(false);
+						writer.println("Successfully logged out.");
+					}
+					
+					/* send command*/
+					else if (request.startsWith("!send"))
+					{
+						for(User u:chatserver.GetUserList())
+						{
+							System.out.println(u.getUsername());
+							if(u.isActive())
+							{
+								System.out.println(u.getUsername());
+								PrintWriter writerForUser = new PrintWriter(u.getSocket().getOutputStream(), true);
+								writerForUser.println(user.getUsername() + ": "+ request.substring(request.indexOf(' ')+1, request.length()));
+								//writerForUser.flush();
+							}
+						}
+					}
+					
+					/*register command*/
+					else if (request.startsWith("!register") && parts.length == 2)
+					{
+						String[] connectionParts = parts[2].split(":");
+						user.setIp(connectionParts[0]);
+						user.setPort(Integer.parseInt(connectionParts[1]));
+						
+						writer.println("Successfully registered address for " + user.getUsername() + ".");
+					}
+					else{
+						writer.println("Unknown Command");
+					}
+					
 				}
-				
-				if (parts.length == 1 && request.startsWith("!logout"))
-				{	
-					user.setActive(false);
-					writer.println("Successfully logged out.");
+				else
+				{
+					writer.println("Unknown Command");
 				}
 			}
 		} catch (IOException e) {

@@ -1,11 +1,15 @@
 package entity;
 
+import java.net.Socket;
+
 public class User {
 	
 	private String username;
 	private String password;
 	private boolean active;
-	// TODO IP
+	private Socket socket;
+	private String ip;
+	private int port;
 	
 	public String getUsername() {
 		return username;
@@ -31,5 +35,27 @@ public class User {
 		this.active = active;
 	}
 	
+	public void setSocket(Socket socket){
+		this.socket = socket;
+	}
 	
+	public Socket getSocket(){
+		return socket;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
+	}
 }

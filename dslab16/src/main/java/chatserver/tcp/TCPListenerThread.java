@@ -3,6 +3,7 @@ package chatserver.tcp;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import chatserver.Chatserver;
 
@@ -17,8 +18,10 @@ public class TCPListenerThread implements Runnable {
 	}
 
 	public void run() {
+		
+		boolean interupted = false;
 
-		while (true) {
+		while (!interupted) {
 			Socket socket = null;
 			
 			
@@ -27,9 +30,8 @@ public class TCPListenerThread implements Runnable {
 				socket = serverSocket.accept();
 				// start new thread that handles client requests
 				new Thread(new TCPHandlerThread(socket,chatserver)).start();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException e) {	// SocketException is a subtype of IOException
+				interupted = true;
 			}
 		}
 	}

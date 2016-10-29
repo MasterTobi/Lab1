@@ -15,6 +15,7 @@ import util.Config;
 
 public class Client implements IClientCli, Runnable {
 
+	private Socket socket;
 	private String componentName;
 	private Config config;
 	private Shell shell;
@@ -22,6 +23,7 @@ public class Client implements IClientCli, Runnable {
 	private PrintStream userResponseStream;
 	private BufferedReader serverReader;
 	private PrintWriter serverWriter;
+	private Thread publicListenerThread;
 
 	/**
 	 * @param componentName
@@ -40,9 +42,8 @@ public class Client implements IClientCli, Runnable {
 		this.userRequestStream = userRequestStream;
 		this.userResponseStream = userResponseStream;
 
-		Socket socket;
+		
 		try {
-			
 			socket = new Socket(config.getString("chatserver.host"),config.getInt("chatserver.tcp.port"));
 			
 			// create a reader to retrieve messages send by the server
@@ -81,6 +82,9 @@ public class Client implements IClientCli, Runnable {
 			
 			// read server response
 			response  = serverReader.readLine();
+			
+			publicListenerThread = new Thread(new PublicListener(socket, serverReader, userResponseStream));
+			publicListenerThread.start();
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -113,7 +117,9 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String send(String message) throws IOException {
-		// TODO Auto-generated method stub
+		
+		serverWriter.println("!send " + message);
+		
 		return null;
 	}
 
@@ -141,7 +147,13 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String register(String privateAddress) throws IOException {
-		// TODO Auto-generated method stub
+		
+		// TODO check privateAddress
+		
+		serverWriter.println("!register " + privateAddress);
+		
+		// TODO open thread
+		
 		return null;
 	}
 	
