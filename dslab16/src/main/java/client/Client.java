@@ -140,8 +140,21 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String lookup(String username) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		
+		String response = null;
+		try {
+			// write login command to server
+			serverWriter.println("!lookup "+ username);
+			
+			// read server response
+			response  = serverReader.readLine();
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return response;
 	}
 
 	@Override

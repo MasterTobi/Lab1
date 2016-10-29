@@ -61,25 +61,41 @@ public class TCPHandlerThread implements Runnable{
 					}
 					
 					/* send command*/
-					else if (request.startsWith("!send"))
+					else if (request.startsWith("!send") && parts.length >= 2)
 					{
 						for(User u:chatserver.GetUserList())
 						{
-							System.out.println(u.getUsername());
-							if(u.isActive())
+							if(u.isActive() && !user.equals(u))
 							{
-								System.out.println(u.getUsername());
 								PrintWriter writerForUser = new PrintWriter(u.getSocket().getOutputStream(), true);
 								writerForUser.println(user.getUsername() + ": "+ request.substring(request.indexOf(' ')+1, request.length()));
-								//writerForUser.flush();
 							}
+						}
+					}
+					
+					else if(request.startsWith("!lookup") && parts.length == 2)
+					{
+						String username = parts[1];
+						boolean found = false;
+						
+						for(User u:chatserver.GetUserList())
+						{
+							if(u.getIp() != null && u.getUsername().equals(username))
+							{
+								writer.println(u.getIp()+":"+u.getPort());
+								found = true;
+								break;
+							}
+						}
+						if(!found){
+							writer.println("Wrong username or user not registered.");
 						}
 					}
 					
 					/*register command*/
 					else if (request.startsWith("!register") && parts.length == 2)
 					{
-						String[] connectionParts = parts[2].split(":");
+						String[] connectionParts = parts[1].split(":");
 						user.setIp(connectionParts[0]);
 						user.setPort(Integer.parseInt(connectionParts[1]));
 						
