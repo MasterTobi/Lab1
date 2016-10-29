@@ -8,6 +8,7 @@ public class User {
 	private String password;
 	private boolean active;
 	private Socket socket;
+	private boolean registered;
 	private String ip;
 	private int port;
 	
@@ -41,6 +42,14 @@ public class User {
 	
 	public Socket getSocket(){
 		return socket;
+	}
+	
+	public boolean isRegistered() {
+		return registered;
+	}
+
+	public void setRegistered(boolean registered) {
+		this.registered = registered;
 	}
 
 	public String getIp() {

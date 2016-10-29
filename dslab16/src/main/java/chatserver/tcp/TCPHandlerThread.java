@@ -73,6 +73,7 @@ public class TCPHandlerThread implements Runnable{
 						}
 					}
 					
+					/* lookup command */
 					else if(request.startsWith("!lookup") && parts.length == 2)
 					{
 						String username = parts[1];
@@ -80,7 +81,7 @@ public class TCPHandlerThread implements Runnable{
 						
 						for(User u:chatserver.GetUserList())
 						{
-							if(u.getIp() != null && u.getUsername().equals(username))
+							if(u.isRegistered() && u.getUsername().equals(username))
 							{
 								writer.println(u.getIp()+":"+u.getPort());
 								found = true;
@@ -92,10 +93,11 @@ public class TCPHandlerThread implements Runnable{
 						}
 					}
 					
-					/*register command*/
+					/* register command */
 					else if (request.startsWith("!register") && parts.length == 2)
 					{
 						String[] connectionParts = parts[1].split(":");
+						user.setRegistered(true);
 						user.setIp(connectionParts[0]);
 						user.setPort(Integer.parseInt(connectionParts[1]));
 						

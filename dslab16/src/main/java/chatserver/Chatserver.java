@@ -85,15 +85,34 @@ public class Chatserver implements IChatserverCli, Runnable {
 	}
 
 	@Override
+	@Command
 	public String users() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		
+		String userStatusList = "";
+		int count = 1;
+		
+		for(User u: userList)
+		{
+			String status = "offline";
+			if(u.isActive())
+			{
+				status = "online";
+			}
+			
+			if(count == userList.size()){
+				userStatusList += String.format("%d. %s %s", count, u.getUsername(), status); 
+			}else{
+				userStatusList += String.format("%d. %s %s%n", count, u.getUsername(), status);
+			}
+			count ++;
+		}
+		
+		return userStatusList;
 	}
 
 	@Override
 	@Command
 	public String exit() throws IOException {
-		// TODO Auto-generated method stub
 		
 		/* close threads responsible for communicating with clients */
 		if(userList != null){
