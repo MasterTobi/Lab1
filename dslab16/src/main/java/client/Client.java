@@ -42,9 +42,9 @@ public class Client implements IClientCli, Runnable {
 		this.config = config;
 		this.userRequestStream = userRequestStream;
 		this.userResponseStream = userResponseStream;
-
 		
 		try {
+			/* create tcp socket with server hostname and server prot */
 			socket = new Socket(config.getString("chatserver.host"),config.getInt("chatserver.tcp.port"));
 			
 			// create a reader to retrieve messages send by the server
@@ -79,13 +79,15 @@ public class Client implements IClientCli, Runnable {
 		String response = null;
 		try {
 			// write login command to server
-			serverWriter.println("!login " + username + " " + password);
-			
+			serverWriter.format("!login %s %s%n",username,password);
 			// read server response
 			response  = serverReader.readLine();
 			
-			publicListenerThread = new Thread(new PublicListener(this, socket, serverReader, userResponseStream));
-			publicListenerThread.start();
+			if(publicListenerThread != null)
+			{
+				publicListenerThread = new Thread(new PublicListener(this, socket, serverReader, userResponseStream));
+				publicListenerThread.start();
+			}
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -134,7 +136,12 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String msg(String username, String message) throws IOException {
-		// TODO Auto-generated method stub
+
+		String parts[] = lookup(username).split(":");
+		
+		Thread privateWriterThread = new Thread(new PrivateWriter(message, username, parts[0], Integer.parseInt(parts[1]), userResponseStream));
+		privateWriterThread.start();
+		
 		return null;
 	}
 
@@ -161,14 +168,56 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String register(String privateAddress) throws IOException {
+		/*
+		String response = null;
+		try {
+			// write login command to server
+			serverWriter.println("!register "+ privateAddress);
+			
+			// read server response
+			response  = serverReader.readLine();
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		// TODO check privateAddress
+		return response;
+		*/
+		
+		String response = null;
+		int port;
+		
+		String parts[] = privateAddress.split(":");
+		if(parts.length != 2)
+		{
+			return "PrivateAddress is not correct!";
+		}
+		
+		try{
+			port = Integer.parseInt(parts[1]);
+		}
+		catch(NumberFormatException e)
+		{
+			return "Port is not a number!";
+		}
+		
+		System.out.println(1);
 		
 		serverWriter.println("!register " + privateAddress);
 		
-		// TODO open thread
+		System.out.println(2);
 		
-		return null;
+		response  = serverReader.readLine();
+		
+		System.out.println(3);
+		
+		Thread privateListenerThread = new Thread(new PrivateListner(userResponseStream,port));
+		privateListenerThread.start();
+		
+		System.out.println(4);
+		
+		return response;
 	}
 	
 	@Override

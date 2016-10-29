@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 
 import chatserver.Chatserver;
 import chatserver.LoginException;
@@ -113,7 +114,12 @@ public class TCPHandlerThread implements Runnable{
 					writer.println("Unknown Command");
 				}
 			}
-		} catch (IOException e) {
+		}
+		catch(SocketException e)
+		{
+			// socket closed
+		}
+		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
