@@ -7,18 +7,21 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import chatserver.tcp.TCPHandlerThread;
+import cli.Shell;
 
 public class PrivateListner implements Runnable{
 
 	private ServerSocket privateServerSocket;
 	private PrintStream userResponseStream;
 	private int port;
+	private Shell shell;
 	
-	public PrivateListner(PrintStream userResponseStream, int port)
+	public PrivateListner(int port, Shell shell)
 	{
-		this.userResponseStream = userResponseStream;
+		this.shell = shell;
 		this.port = port;
 	}
 	
@@ -28,9 +31,7 @@ public class PrivateListner implements Runnable{
 			
 			privateServerSocket = new ServerSocket(port);
 			
-			boolean interupted = false;
-			
-			while (!interupted) {
+			while (!Thread.interrupted()) {
 				
 				try (	// try with resources
 					// wait for Client to connect
@@ -41,17 +42,24 @@ public class PrivateListner implements Runnable{
 					PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 				) {
 					String privateMessage = reader.readLine();
-					userResponseStream.println(privateMessage);
+					shell.writeLine(privateMessage);
 					writer.println("!ack");
-					
-				} catch (IOException e) {	// SocketException is a subtype of IOException
-					interupted = true;
+				}
+				catch(SocketException e)
+				{
+					// thrown if socket is closed
+				}
+				catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+		}
+		catch (SocketException e)
+		{
+			// thrown if socket was closed
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 	}

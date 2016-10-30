@@ -85,8 +85,6 @@ public class TCPHandlerThread implements Runnable{
 							{
 								PrintWriter writerForUser = new PrintWriter(u.getSocket().getOutputStream(), true);
 								writerForUser.format("%s: %s%n",user.getUsername(), request.substring(request.indexOf(' ')+1, request.length()));
-								System.out.println("send " + request);
-								writerForUser.flush();
 							}
 						}
 					}
@@ -113,9 +111,7 @@ public class TCPHandlerThread implements Runnable{
 					
 					/* register command */
 					else if (request.startsWith("!register") && parts.length == 2)
-					{
-						System.out.println("received " + request);
-						
+					{	
 						String[] connectionParts = parts[1].split(":");
 						user.setRegistered(true);
 						user.setIp(connectionParts[0]);

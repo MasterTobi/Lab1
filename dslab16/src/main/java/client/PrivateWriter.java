@@ -18,33 +18,30 @@ public class PrivateWriter implements Runnable{
 	String username;
 	String ip;
 	int port;
-	PrintStream userResponseStream;
+	private Shell shell;
 	
-	public PrivateWriter(String message, String username, String ip, int port, PrintStream userResponseStream)
+	public PrivateWriter(String message, String username, String ip, int port, Shell shell)
 	{
 		this.message = message;
 		this.username = username;
 		this.ip = ip;
 		this.port = port;
-		this.userResponseStream = userResponseStream;
+		this.shell = shell;
 	}
 	
 	@Override
 	public void run() {
 		
-		Socket socket;
-		BufferedReader reader;
-		PrintWriter writer;
-		
-		try {
-			socket = new Socket(ip,port);
-			// create a reader to retrieve !ack send by the the other client
-			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			// create a writer to send private messages to the the other client
-			writer = new PrintWriter(socket.getOutputStream(), true);			
+		try (
+			Socket socket = new Socket(ip,port);
 			
+			// create a reader to retrieve !ack send by the the other client
+			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			// create a writer to send private messages to the the other client
+			PrintWriter writer= new PrintWriter(socket.getOutputStream(), true);	
+		){
 			writer.println(message);
-			userResponseStream.println(username + " replied with " + reader.readLine());
+			shell.writeLine(String.format("%s replied with %s%n", username, reader.readLine()));
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block

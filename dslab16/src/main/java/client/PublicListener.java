@@ -8,30 +8,25 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.List;
 
+import cli.Shell;
+
 public class PublicListener implements Runnable{
 	
 	private Client client;
 	private Socket socket;
 	private BufferedReader serverReader;
-	private PrintStream userResponseStream;
-	private String lastMessage;
 	private List<String> messageQueue;
 	private Object lock;
+	private Shell shell;
+	private boolean print = true;
+
 	
-	public PublicListener(Socket socket, BufferedReader serverReader, PrintStream userResponseStream)
-	{
+	public PublicListener(Socket socket, BufferedReader serverReader, List<String> messageQueue, Object lock, Shell shell) {
 		this.socket = socket;
 		this.serverReader = serverReader;
-		this.userResponseStream = userResponseStream;
-	}
-	
-	public PublicListener(Client client, Socket socket, BufferedReader serverReader, PrintStream userResponseStream, List<String> messageQueue, Object lock) {
-		this.client = client;
-		this.socket = socket;
-		this.serverReader = serverReader;
-		this.userResponseStream = userResponseStream;
 		this.messageQueue = messageQueue;
 		this.lock = lock;
+		this.shell = shell;
 	}
 
 	@Override
@@ -42,7 +37,12 @@ public class PublicListener implements Runnable{
 		try {
 			while(!socket.isClosed() && Thread.interrupted() == false && (message = serverReader.readLine()) != null)
 			{	
-				userResponseStream.println(message);
+				if(print){
+					shell.writeLine(message);
+				}
+				else{
+					print = true;	// print next line
+				}
 			
 				messageQueue.add(message);
 			
@@ -58,5 +58,9 @@ public class PublicListener implements Runnable{
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void doNotPrintNextLine() {
+		print = false;
 	}
 }

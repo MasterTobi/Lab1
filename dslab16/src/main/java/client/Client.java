@@ -26,9 +26,8 @@ public class Client implements IClientCli, Runnable {
 	private PrintStream userResponseStream;
 	private BufferedReader serverReader;
 	private PrintWriter serverWriter;
-	private Thread publicListenerThread;
-	private String lastMessage;
 	private PrivateListner privateListner;
+	private PublicListener publicListener;
 	private List<String> messageQueue;
 	private Object lock;
 	
@@ -36,6 +35,7 @@ public class Client implements IClientCli, Runnable {
 	private final String PRIVATE_ADDRESS_INCORRECT = "PrivateAddress is not correct!";
 	private final String PORT_NOT_A_NUMBER = "Port is not a number!";
 	private final String NO_MESSAGE_RECEIVED = "No message received!";
+	private final String WORONG_USER_OR_USER_NOT_REACHABLE = "Wrong username or user not reachable.";
 
 	/**
 	 * @param componentName
@@ -71,7 +71,8 @@ public class Client implements IClientCli, Runnable {
 			serverWriter = new PrintWriter(socket.getOutputStream(), true);
 			
 			/* start thread for messages from the server */
-			publicListenerThread = new Thread(new PublicListener(this, socket, serverReader, userResponseStream, messageQueue, lock));
+			publicListener = new PublicListener(socket, serverReader, messageQueue, lock,shell);
+			Thread publicListenerThread = new Thread(publicListener);
 			publicListenerThread.start();
 		}
 		catch (ConnectException e) {
@@ -169,9 +170,19 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String msg(String username, String message) throws IOException {
 
-		String parts[] = lookup(username).split(":");
+		publicListener.doNotPrintNextLine();
+		serverWriter.println("!lookup "+ username);
 		
-		Thread privateWriterThread = new Thread(new PrivateWriter(message, username, parts[0], Integer.parseInt(parts[1]), userResponseStream));
+		String response  = waitForResponseAndDeleteLastMessage();
+		
+		if(!response.matches("(.*):(.*)"))
+		{
+			return WORONG_USER_OR_USER_NOT_REACHABLE;
+		}
+		
+		String parts[] = response.split(":");
+		
+		Thread privateWriterThread = new Thread(new PrivateWriter(message, username, parts[0], Integer.parseInt(parts[1]), shell));
 		privateWriterThread.start();
 		
 		return null;
@@ -195,7 +206,6 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String register(String privateAddress) throws IOException {
 		
-		String response = null;
 		int port;
 		
 		String parts[] = privateAddress.split(":");
@@ -214,14 +224,14 @@ public class Client implements IClientCli, Runnable {
 		
 		serverWriter.format("!register %s%n",privateAddress);
 		
-		response  = waitForResponseAndDeleteLastMessage();
+		waitForResponseAndDeleteLastMessage();
 	
 		/* setup Listener for private messages */
-		privateListner = new PrivateListner(userResponseStream,port);
+		privateListner = new PrivateListner(port,shell);
 		Thread privateListenerThread = new Thread(privateListner);
 		privateListenerThread.start();
 		
-		return response;
+		return null;
 	}
 	
 	@Override
@@ -240,8 +250,6 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String exit() throws IOException {
 		
-		System.out.println("Exit");
-		
 		/* terminate socket for communication with server */
 		if(socket != null){
 			socket.close();
@@ -254,7 +262,6 @@ public class Client implements IClientCli, Runnable {
 		
 		/* terminate shell thread */
 		if(shell != null){
-			System.out.println("close shell");
 			shell.close();
 			userRequestStream.close();
 			userResponseStream.close();
@@ -289,20 +296,16 @@ public class Client implements IClientCli, Runnable {
 		return messageQueue.get(messageQueueSize);
 	}
 	
-	public void setLastMessage(String lastMessage) {
-		this.lastMessage = lastMessage;
-	}
-	
 	/**
 	 * @param args
 	 *            the first argument is the name of the {@link Client} component
 	 */
 	public static void main(String[] args) {
-		/*Client client = new Client(args[0], new Config("client"), System.in,
-				System.out);*/
-		// TODO remove (just for debugging)
-		Client client = new Client("c", new Config("client"), System.in,
+		Client client = new Client(args[0], new Config("client"), System.in,
 				System.out);
+		// TODO remove (just for debugging)
+		/*Client client = new Client("c", new Config("client"), System.in,
+				System.out);*/
 		// TODO: start the client
 		new Thread(client).start();
 	}
