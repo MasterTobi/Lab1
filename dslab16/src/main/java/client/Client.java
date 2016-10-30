@@ -250,7 +250,6 @@ public class Client implements IClientCli, Runnable {
 	public static void main(String[] args) {
 		Client client = new Client(args[0], new Config("client"), System.in,
 				System.out);
-		System.out.println("hallo");
 		// TODO: start the client
 		new Thread(client).start();
 	}

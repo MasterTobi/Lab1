@@ -13,9 +13,11 @@ import entity.User;
 
 public class TCPHandlerThread implements Runnable{
 
-	Socket socket;
-	Chatserver chatserver;
-	User user;
+	private Socket socket;
+	private Chatserver chatserver;
+	private User user;
+	private BufferedReader reader;
+	PrintWriter writer;
 
 	public TCPHandlerThread(Socket socket, Chatserver chatserver) {
 		this.socket = socket;
@@ -52,6 +54,11 @@ public class TCPHandlerThread implements Runnable{
 						} catch (LoginException e) {
 							writer.println(e.getMessage());
 						}
+					}
+					
+					else if (user == null)
+					{
+						writer.println("You are not logged in.");
 					}
 					
 					/* logout command */
