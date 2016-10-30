@@ -25,7 +25,11 @@ public class Chatserver implements IChatserverCli, Runnable {
 	private ServerSocket serverSocketTCP;
 	private List<User> userList;
 	private Thread tcpListenerThread;
-
+	private Thread shellThread;
+	
+	private final String WRONG_USERNAME_OR_PASSWORD = "Wrong username or password.";
+	private final String ALREADY_LOGGED_IN = "You are already logged in!";
+	
 	/**
 	 * @param componentName
 	 *            the name of the component - represented in the prompt
@@ -49,35 +53,13 @@ public class Chatserver implements IChatserverCli, Runnable {
 		shell = new Shell(componentName, userRequestStream, userResponseStream);
 		shell.register(this);
 	}
-	
-	private void getAllUsers()
-	{
-		Config userConfig = new Config("user");
-		
-		userList = new ArrayList<User>();
-		
-		for(String username: userConfig.listKeys())
-		{
-			User u = new User();
-			u.setUsername(username.substring(0, username.lastIndexOf('.')));
-			u.setPassword(userConfig.getString(username));
-			u.setActive(false);
-			userList.add(u);
-		}
-		
-		/* sort list alphabetically */
-		
-		 Collections.sort(userList, new Comparator<User>() {
-		        @Override
-		        public int compare(User u1, User u2) {
-		            return u1.getUsername().compareToIgnoreCase(u2.getUsername());
-		        }
-		    });
-	}
 
 	@Override
 	public void run() {
 		// TODO
+		
+		shellThread = new Thread(shell);
+		shellThread.start();
 		
 		// create and start a new TCP ServerSocket
 		try {
@@ -89,10 +71,13 @@ public class Chatserver implements IChatserverCli, Runnable {
 			tcpListenerThread.start();
 			
 		} catch (IOException e) {
-			throw new RuntimeException("Cannot listen on TCP port.", e);
+			System.out.println("Cannot listen on TCP port.");
+			try {
+				exit();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		}
-		
-		new Thread(shell).start();
 	}
 
 	@Override
@@ -136,15 +121,50 @@ public class Chatserver implements IChatserverCli, Runnable {
 			}
 		}
 		
-		// close TCP thread
-		serverSocketTCP.close();
-		
+		/* close TCP thread */
+		if(serverSocketTCP != null){
+			serverSocketTCP.close();
+		}
+	
+
 		//TODO close UDP Thread
 		
-		//TODO exit
-		
+		/* terminate shell thread */
+		if(shell != null){
+			shell.close();
+			userRequestStream.close();
+			userResponseStream.close();
+		}
+	
 		return null;
 	}
+	
+	
+	private void getAllUsers()
+	{
+		Config userConfig = new Config("user");
+		
+		userList = new ArrayList<User>();
+		
+		for(String username: userConfig.listKeys())
+		{
+			User u = new User();
+			u.setUsername(username.substring(0, username.lastIndexOf('.')));
+			u.setPassword(userConfig.getString(username));
+			u.setActive(false);
+			userList.add(u);
+		}
+		
+		/* sort list alphabetically */
+		
+		 Collections.sort(userList, new Comparator<User>() {
+		        @Override
+		        public int compare(User u1, User u2) {
+		            return u1.getUsername().compareToIgnoreCase(u2.getUsername());
+		        }
+		    });
+	}
+	
 	
 	public User loginUser(String username, String password) throws LoginException{
 		
@@ -154,7 +174,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 			{
 				/* check if user already exists */
 				if(u.isActive()){
-					throw new LoginException("You are already logged in!");
+					throw new LoginException(ALREADY_LOGGED_IN);
 				}
 				else
 				{
@@ -164,13 +184,13 @@ public class Chatserver implements IChatserverCli, Runnable {
 						return u;
 					}else
 					{
-						throw new LoginException("Wrong username or password.");
+						throw new LoginException(WRONG_USERNAME_OR_PASSWORD);
 					}
 				}
 			}
 		}
 		
-		throw new LoginException("Wrong username or password.");
+		throw new LoginException(WRONG_USERNAME_OR_PASSWORD);
 	}
 	
 	public List<User> GetUserList()

@@ -6,8 +6,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.LinkedList;
+import java.util.List;
 
 import cli.Command;
 import cli.Shell;
@@ -25,6 +28,14 @@ public class Client implements IClientCli, Runnable {
 	private PrintWriter serverWriter;
 	private Thread publicListenerThread;
 	private String lastMessage;
+	private PrivateListner privateListner;
+	private List<String> messageQueue;
+	private Object lock;
+	
+	private final String COULD_NOT_ESTABLISH_CONNECTION = "Could not establish connection.";
+	private final String PRIVATE_ADDRESS_INCORRECT = "PrivateAddress is not correct!";
+	private final String PORT_NOT_A_NUMBER = "Port is not a number!";
+	private final String NO_MESSAGE_RECEIVED = "No message received!";
 
 	/**
 	 * @param componentName
@@ -43,8 +54,14 @@ public class Client implements IClientCli, Runnable {
 		this.userRequestStream = userRequestStream;
 		this.userResponseStream = userResponseStream;
 		
+		messageQueue = new LinkedList<String>();
+		lock = new Object();
+		
+		shell = new Shell(componentName, userRequestStream, userResponseStream);
+		shell.register(this);
+		
 		try {
-			/* create tcp socket with server hostname and server prot */
+			/* create tcp socket with server hostname and server port */
 			socket = new Socket(config.getString("chatserver.host"),config.getInt("chatserver.tcp.port"));
 			
 			// create a reader to retrieve messages send by the server
@@ -53,16 +70,20 @@ public class Client implements IClientCli, Runnable {
 			// create a writer to send messages to the server
 			serverWriter = new PrintWriter(socket.getOutputStream(), true);
 			
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			/* start thread for messages from the server */
+			publicListenerThread = new Thread(new PublicListener(this, socket, serverReader, userResponseStream, messageQueue, lock));
+			publicListenerThread.start();
+		}
+		catch (ConnectException e) {
+			userResponseStream.println(COULD_NOT_ESTABLISH_CONNECTION);
+			try {
+				exit();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		shell = new Shell(componentName, userRequestStream, userResponseStream);
-		shell.register(this);
 	}
 
 	@Override
@@ -76,52 +97,63 @@ public class Client implements IClientCli, Runnable {
 	public String login(String username, String password) throws IOException {
 		// TODO Auto-generated method stub
 		
-		String response = null;
-		try {
-			// write login command to server
-			serverWriter.format("!login %s %s%n",username,password);
-			// read server response
-			response  = serverReader.readLine();
-			
-			if(publicListenerThread != null)
-			{
-				publicListenerThread = new Thread(new PublicListener(this, socket, serverReader, userResponseStream));
-				publicListenerThread.start();
+		// write login command to server
+		int messageQueueSize = messageQueue.size();
+		
+		serverWriter.format("!login %s %s%n",username,password);
+		
+		waitForResponseAndDeleteLastMessage();
+		
+		return null;
+		/*
+		synchronized(publicListenerThread)
+		{
+			try {
+				publicListenerThread.wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		
-		return response;
+		response = serverReader.readLine();
+		
+		synchronized(publicListenerThread)
+		{
+			publicListenerThread.notify();
+		}*/
+		
+		/*synchronized(lock){
+			while(messageQueueSize +1 != messageQueue.size()){
+				try {
+					lock.wait();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		return messageQueue.get(messageQueueSize);*/
 	}
 
 	@Override
 	@Command
 	public String logout() throws IOException {
 		
-		String response = null;
-		try {
-			// write login command to server
-			serverWriter.println("!logout");
-			
-			// read server response
-			response  = serverReader.readLine();
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		// write login command to server
+		serverWriter.println("!logout");
 		
-		return response;
+		waitForResponseAndDeleteLastMessage();
+		
+		return null;
 	}
 
 	@Override
 	@Command
 	public String send(String message) throws IOException {
 		
-		serverWriter.println("!send " + message);
+		serverWriter.format("!send %s%n", message);
 		
 		return null;
 	}
@@ -150,40 +182,18 @@ public class Client implements IClientCli, Runnable {
 	public String lookup(String username) throws IOException {
 		
 		String response = null;
-		try {
-			// write login command to server
-			serverWriter.println("!lookup "+ username);
-			
-			// read server response
-			response  = serverReader.readLine();
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
-		return response;
+		// write lookup command to server
+		serverWriter.println("!lookup "+ username);
+
+		response  = waitForResponseAndDeleteLastMessage();
+		
+		return null;
 	}
 
 	@Override
 	@Command
 	public String register(String privateAddress) throws IOException {
-		/*
-		String response = null;
-		try {
-			// write login command to server
-			serverWriter.println("!register "+ privateAddress);
-			
-			// read server response
-			response  = serverReader.readLine();
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		return response;
-		*/
 		
 		String response = null;
 		int port;
@@ -191,7 +201,7 @@ public class Client implements IClientCli, Runnable {
 		String parts[] = privateAddress.split(":");
 		if(parts.length != 2)
 		{
-			return "PrivateAddress is not correct!";
+			return PRIVATE_ADDRESS_INCORRECT;
 		}
 		
 		try{
@@ -199,23 +209,17 @@ public class Client implements IClientCli, Runnable {
 		}
 		catch(NumberFormatException e)
 		{
-			return "Port is not a number!";
+			return PORT_NOT_A_NUMBER;
 		}
 		
-		System.out.println(1);
+		serverWriter.format("!register %s%n",privateAddress);
 		
-		serverWriter.println("!register " + privateAddress);
-		
-		System.out.println(2);
-		
-		response  = serverReader.readLine();
-		
-		System.out.println(3);
-		
-		Thread privateListenerThread = new Thread(new PrivateListner(userResponseStream,port));
+		response  = waitForResponseAndDeleteLastMessage();
+	
+		/* setup Listener for private messages */
+		privateListner = new PrivateListner(userResponseStream,port);
+		Thread privateListenerThread = new Thread(privateListner);
 		privateListenerThread.start();
-		
-		System.out.println(4);
 		
 		return response;
 	}
@@ -224,21 +228,67 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String lastMsg() throws IOException {
 		
-		if(lastMessage == null)
+		if(messageQueue.size() == 0)
 		{
-			return "No message received!";
+			return NO_MESSAGE_RECEIVED;
 		}
 		
-		return lastMessage;
+		return messageQueue.get(messageQueue.size()-1);
 	}
 
 	@Override
 	@Command
 	public String exit() throws IOException {
-		// TODO Auto-generated method stub
+		
+		System.out.println("Exit");
+		
+		/* terminate socket for communication with server */
+		if(socket != null){
+			socket.close();
+		}
+		
+		if(privateListner != null)
+		{
+			privateListner.close();
+		}
+		
+		/* terminate shell thread */
+		if(shell != null){
+			System.out.println("close shell");
+			shell.close();
+			userRequestStream.close();
+			userResponseStream.close();
+		}
+		
 		return null;
 	}
 
+	private String waitForResponseAndDeleteLastMessage()
+	{
+		String response = waitForResponse();
+		messageQueue.remove(response);
+		
+		return response;
+	}
+	
+	private String waitForResponse()
+	{
+		int messageQueueSize = messageQueue.size();
+		
+		synchronized(lock){
+			while(messageQueueSize +1 != messageQueue.size()){
+				try {
+					lock.wait();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		return messageQueue.get(messageQueueSize);
+	}
+	
 	public void setLastMessage(String lastMessage) {
 		this.lastMessage = lastMessage;
 	}
@@ -248,7 +298,10 @@ public class Client implements IClientCli, Runnable {
 	 *            the first argument is the name of the {@link Client} component
 	 */
 	public static void main(String[] args) {
-		Client client = new Client(args[0], new Config("client"), System.in,
+		/*Client client = new Client(args[0], new Config("client"), System.in,
+				System.out);*/
+		// TODO remove (just for debugging)
+		Client client = new Client("c", new Config("client"), System.in,
 				System.out);
 		// TODO: start the client
 		new Thread(client).start();

@@ -12,8 +12,9 @@ import chatserver.tcp.TCPHandlerThread;
 
 public class PrivateListner implements Runnable{
 
-	PrintStream userResponseStream;
-	int port;
+	private ServerSocket privateServerSocket;
+	private PrintStream userResponseStream;
+	private int port;
 	
 	public PrivateListner(PrintStream userResponseStream, int port)
 	{
@@ -25,9 +26,9 @@ public class PrivateListner implements Runnable{
 	public void run() {
 		try {
 			
-			boolean interupted = false;
+			privateServerSocket = new ServerSocket(port);
 			
-			ServerSocket privateServerSocket = new ServerSocket(port);
+			boolean interupted = false;
 			
 			while (!interupted) {
 				
@@ -45,11 +46,20 @@ public class PrivateListner implements Runnable{
 					
 				} catch (IOException e) {	// SocketException is a subtype of IOException
 					interupted = true;
+					e.printStackTrace();
 				}
 			}
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void close(){
+		try {
+			privateServerSocket.close();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
