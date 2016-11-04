@@ -3,13 +3,17 @@ package chatserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.DatagramSocket;
 import java.net.ServerSocket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import chatserver.tcp.TCPListenerThread;
+import chatserver.udp.UDPHandlerThread;
+import chatserver.udp.UDPListenerThread;
 import cli.Command;
 import cli.Shell;
 import entity.User;
@@ -23,9 +27,10 @@ public class Chatserver implements IChatserverCli, Runnable {
 	private InputStream userRequestStream;
 	private PrintStream userResponseStream;
 	private ServerSocket serverSocketTCP;
-	private List<User> userList;
+	private DatagramSocket serverSocketUDP;
 	private Thread tcpListenerThread;
 	private Thread shellThread;
+	private List<User> userList;
 	
 	private final String WRONG_USERNAME_OR_PASSWORD = "Wrong username or password.";
 	private final String ALREADY_LOGGED_IN = "You are already logged in!";
@@ -71,13 +76,29 @@ public class Chatserver implements IChatserverCli, Runnable {
 			tcpListenerThread.start();
 			
 		} catch (IOException e) {
-			System.out.println("Cannot listen on TCP port.");
 			try {
+				shell.writeLine("Cannot listen on TCP port.");
 				exit();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		}
+		
+		try {
+			serverSocketUDP = new DatagramSocket(config.getInt("udp.port"));
+			
+			UDPListenerThread udpListenerThread = new UDPListenerThread(serverSocketUDP,this);
+			new Thread(udpListenerThread).start();
+			
+		} catch (SocketException e) {
+			try {
+				shell.writeLine("Cannot listen on UDP port.");
+				exit();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+		
 	}
 
 	@Override
@@ -128,6 +149,9 @@ public class Chatserver implements IChatserverCli, Runnable {
 	
 
 		//TODO close UDP Thread
+		if(serverSocketUDP != null){
+			serverSocketUDP.close();
+		}
 		
 		/* terminate shell thread */
 		if(shell != null){
@@ -209,6 +233,20 @@ public class Chatserver implements IChatserverCli, Runnable {
 		// TODO: start the chatserver
 		Thread chatserverThread = new Thread(chatserver);
 		chatserverThread.start();
+	}
+
+	public String getOnlineList() {
+		
+		String onlineList = "Online users:";
+		
+		for(User u: userList){
+			if(u.isActive()){
+			onlineList += String.format("%n* %s", u.getUsername());
+			}
+		}
+		
+		return onlineList;
+		
 	}
 
 }

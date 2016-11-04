@@ -7,7 +7,11 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ConnectException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,7 +22,8 @@ import util.Config;
 
 public class Client implements IClientCli, Runnable {
 
-	private Socket socket;
+	private Socket tcpSocket;
+	private DatagramSocket udpSocket;
 	private String componentName;
 	private Config config;
 	private Shell shell;
@@ -62,16 +67,16 @@ public class Client implements IClientCli, Runnable {
 		
 		try {
 			/* create tcp socket with server hostname and server port */
-			socket = new Socket(config.getString("chatserver.host"),config.getInt("chatserver.tcp.port"));
+			tcpSocket = new Socket(config.getString("chatserver.host"),config.getInt("chatserver.tcp.port"));
 			
 			// create a reader to retrieve messages send by the server
-			serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			serverReader = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
 			
 			// create a writer to send messages to the server
-			serverWriter = new PrintWriter(socket.getOutputStream(), true);
+			serverWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
 			
 			/* start thread for messages from the server */
-			publicListener = new PublicListener(socket, serverReader, messageQueue, lock,shell);
+			publicListener = new PublicListener(tcpSocket, serverReader, messageQueue, lock,shell);
 			Thread publicListenerThread = new Thread(publicListener);
 			publicListenerThread.start();
 		}
@@ -83,6 +88,12 @@ public class Client implements IClientCli, Runnable {
 				e1.printStackTrace();
 			}
 		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			udpSocket = new DatagramSocket();
+		} catch (SocketException e) {
 			e.printStackTrace();
 		}
 	}
@@ -162,7 +173,19 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String list() throws IOException {
-		// TODO Auto-generated method stub
+		
+		String request = "!list";
+		byte[] buffer = request.getBytes();
+		
+		DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
+				InetAddress.getByName(config.getString("chatserver.host")), config.getInt("chatserver.udp.port"));
+		
+		udpSocket.send(packet);	// send udp packet to server
+		
+		// start thread to listen to server response
+		UDPListenerThread udpListnerThread = new UDPListenerThread(shell, udpSocket);
+		new Thread(udpListnerThread).start();
+	
 		return null;
 	}
 
@@ -251,8 +274,8 @@ public class Client implements IClientCli, Runnable {
 	public String exit() throws IOException {
 		
 		/* terminate socket for communication with server */
-		if(socket != null){
-			socket.close();
+		if(tcpSocket != null){
+			tcpSocket.close();
 		}
 		
 		if(privateListner != null)
