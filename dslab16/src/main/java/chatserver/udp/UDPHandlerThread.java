@@ -6,19 +6,22 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import chatserver.Chatserver;
+import chatserver.CommandHandler;
 
 public class UDPHandlerThread implements Runnable {
 
 	DatagramPacket packet;
 	DatagramSocket socket;
-	Chatserver server;
+	Chatserver chatserver;
+	CommandHandler commandHelper;
 	
-	private final String UNKNONWN_COMMAND = "Unknown Command";
 
-	public UDPHandlerThread(DatagramPacket packet, DatagramSocket socket, Chatserver server) {
+	public UDPHandlerThread(DatagramPacket packet, DatagramSocket socket, Chatserver chatserver) {
 		this.packet = packet;
 		this.socket = socket;
-		this.server = server;
+		this.chatserver = chatserver;
+		
+		commandHelper = new CommandHandler(chatserver);
 	}
 
 	@Override
@@ -32,11 +35,12 @@ public class UDPHandlerThread implements Runnable {
 		
 		
 		if(request.startsWith("!list")){
-			response = server.getOnlineList();
+			
+			response = commandHelper.list();
 		}
 		else
 		{
-			response = UNKNONWN_COMMAND;
+			response = commandHelper.unknownCommand();
 		}
 		
 		byte[] buf = response.getBytes();

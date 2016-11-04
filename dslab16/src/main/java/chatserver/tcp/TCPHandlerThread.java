@@ -8,28 +8,22 @@ import java.net.Socket;
 import java.net.SocketException;
 
 import chatserver.Chatserver;
+import chatserver.CommandHandler;
 import chatserver.LoginException;
 import entity.User;
 
 public class TCPHandlerThread implements Runnable{
 
 	private Socket socket;
-	private Chatserver chatserver;
 	private User user;
-	private BufferedReader reader;
 	PrintWriter writer;
-	
-	private final String SUCESSFULLY_LOGGED_IN = "Successfully logged in.";
-	private final String NOT_LOGGED_IN = "You are not logged in.";
-	private final String SUCESSFULLY_LOGGED_OUT = "Successfully logged out.";
-	private final String WRONG_USER_OR_NOT_REGISTERED = "Wrong username or user not registered.";
-	private final String SUCCESSFULLY_REGISTERED_ADDRESS = "Successfully registered address for";
-	private final String UNKNONWN_COMMAND = "Unknown Command";
+	CommandHandler commandHandler;
 	
 
 	public TCPHandlerThread(Socket socket, Chatserver chatserver) {
 		this.socket = socket;
-		this.chatserver = chatserver;
+		
+		commandHandler = new CommandHandler(chatserver);
 	}
 
 	@Override
@@ -47,86 +41,56 @@ public class TCPHandlerThread implements Runnable{
 			// read client requests
 			while (socket.isClosed() == false && Thread.interrupted() == false && (request = reader.readLine()) != null) {
 				
-				String[] parts = request.split("\\s");
+				String[] parts = request.split("\\s");	// "\\s" is regex for single white space
 				
 				if(parts.length >= 1)
 				{
 					/* login command */
 					if (request.startsWith("!login") && parts.length == 3) {
-						try {
-							user = chatserver.loginUser(parts[1],parts[2]);
-							user.setSocket(socket);
-							
-							writer.println(SUCESSFULLY_LOGGED_IN);
-							
-						} catch (LoginException e) {
-							writer.println(e.getMessage());
-						}
-					}
-					
-					else if (user == null)
-					{
-						writer.println(NOT_LOGGED_IN);
+						String username = parts[1];
+						String password = parts[2];
+						writer.println(commandHandler.login(username,password, socket));
+						user = commandHandler.getUser(username);
 					}
 					
 					/* logout command */
 					else if (request.startsWith("!logout"))
 					{	
-						user.setActive(false);
-						writer.println(SUCESSFULLY_LOGGED_OUT);
+						writer.println(commandHandler.logout(user));
 					}
 					
 					/* send command*/
 					else if (request.startsWith("!send") && parts.length >= 2)
 					{
-						for(User u:chatserver.GetUserList())
-						{
-							if(u.isActive() && !user.equals(u))
-							{
-								PrintWriter writerForUser = new PrintWriter(u.getSocket().getOutputStream(), true);
-								writerForUser.format("%s: %s%n",user.getUsername(), request.substring(request.indexOf(' ')+1, request.length()));
-							}
-						}
+						String message = request.substring(request.indexOf(' ')+1, request.length());
+						commandHandler.send(message, user);
 					}
 					
 					/* lookup command */
 					else if(request.startsWith("!lookup") && parts.length == 2)
 					{
 						String username = parts[1];
-						boolean found = false;
-						
-						for(User u:chatserver.GetUserList())
-						{
-							if(u.isRegistered() && u.getUsername().equals(username))
-							{
-								writer.format("%s:%d%n",u.getIp(), u.getPort());
-								found = true;
-								break;
-							}
-						}
-						if(!found){
-							writer.println(WRONG_USER_OR_NOT_REGISTERED);
-						}
+						writer.println(commandHandler.lookup(username));
 					}
 					
 					/* register command */
 					else if (request.startsWith("!register") && parts.length == 2)
 					{	
 						String[] connectionParts = parts[1].split(":");
-						user.setRegistered(true);
-						user.setIp(connectionParts[0]);
-						user.setPort(Integer.parseInt(connectionParts[1]));
+						String address = connectionParts[0];
+						int port = Integer.parseInt(connectionParts[1]);
 						
-						writer.format("%s %s.%n",SUCCESSFULLY_REGISTERED_ADDRESS, user.getUsername());
+						writer.println(commandHandler.register(user, address, port));
 					}
+					
 					else{
-						writer.println(UNKNONWN_COMMAND);
+						writer.println(commandHandler.unknownCommand());
 					}
 					
 				}
 				else
 				{
-					writer.println(UNKNONWN_COMMAND);
+					writer.println(commandHandler.unknownCommand());
 				}
 			}
 		}

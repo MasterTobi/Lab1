@@ -32,9 +32,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 	private Thread shellThread;
 	private List<User> userList;
 	
-	private final String WRONG_USERNAME_OR_PASSWORD = "Wrong username or password.";
-	private final String ALREADY_LOGGED_IN = "You are already logged in!";
-	
 	/**
 	 * @param componentName
 	 *            the name of the component - represented in the prompt
@@ -189,34 +186,6 @@ public class Chatserver implements IChatserverCli, Runnable {
 		    });
 	}
 	
-	
-	public User loginUser(String username, String password) throws LoginException{
-		
-		for(User u:userList)
-		{
-			if(u.getUsername().equals(username))
-			{
-				/* check if user already exists */
-				if(u.isActive()){
-					throw new LoginException(ALREADY_LOGGED_IN);
-				}
-				else
-				{
-					if(u.getPassword().equals(password))
-					{
-						u.setActive(true);
-						return u;
-					}else
-					{
-						throw new LoginException(WRONG_USERNAME_OR_PASSWORD);
-					}
-				}
-			}
-		}
-		
-		throw new LoginException(WRONG_USERNAME_OR_PASSWORD);
-	}
-	
 	public List<User> GetUserList()
 	{
 		return userList;
@@ -234,19 +203,4 @@ public class Chatserver implements IChatserverCli, Runnable {
 		Thread chatserverThread = new Thread(chatserver);
 		chatserverThread.start();
 	}
-
-	public String getOnlineList() {
-		
-		String onlineList = "Online users:";
-		
-		for(User u: userList){
-			if(u.isActive()){
-			onlineList += String.format("%n* %s", u.getUsername());
-			}
-		}
-		
-		return onlineList;
-		
-	}
-
 }
