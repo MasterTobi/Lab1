@@ -1,4 +1,4 @@
-package client;
+package client.udp;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -7,12 +7,12 @@ import java.net.SocketException;
 
 import cli.Shell;
 
-public class UDPListenerThread implements Runnable{
+public class PublicUdpListenerThread implements Runnable{
 
 	private Shell shell;
 	private DatagramSocket socket;
 	
-	public UDPListenerThread(Shell shell, DatagramSocket socket) {
+	public PublicUdpListenerThread(Shell shell, DatagramSocket socket) {
 		this.shell = shell;
 		this.socket = socket;
 	}

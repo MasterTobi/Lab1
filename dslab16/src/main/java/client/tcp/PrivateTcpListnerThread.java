@@ -1,4 +1,4 @@
-package client;
+package client.tcp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,14 +12,14 @@ import java.net.SocketException;
 import chatserver.tcp.TCPHandlerThread;
 import cli.Shell;
 
-public class PrivateListner implements Runnable{
+public class PrivateTcpListnerThread implements Runnable{
 
 	private ServerSocket privateServerSocket;
 	private PrintStream userResponseStream;
 	private int port;
 	private Shell shell;
 	
-	public PrivateListner(int port, Shell shell)
+	public PrivateTcpListnerThread(int port, Shell shell)
 	{
 		this.shell = shell;
 		this.port = port;

@@ -1,4 +1,4 @@
-package client;
+package client.tcp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.net.UnknownHostException;
 import cli.Shell;
 import util.Config;
 
-public class PrivateWriter implements Runnable{
+public class PrivateTcpWriterThread implements Runnable{
 
 	String message;
 	String username;
@@ -20,7 +20,7 @@ public class PrivateWriter implements Runnable{
 	int port;
 	private Shell shell;
 	
-	public PrivateWriter(String message, String username, String ip, int port, Shell shell)
+	public PrivateTcpWriterThread(String message, String username, String ip, int port, Shell shell)
 	{
 		this.message = message;
 		this.username = username;

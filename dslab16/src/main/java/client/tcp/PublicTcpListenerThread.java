@@ -1,18 +1,15 @@
-package client;
+package client.tcp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.List;
 
 import cli.Shell;
 
-public class PublicListener implements Runnable{
+public class PublicTcpListenerThread implements Runnable{
 	
-	private Client client;
 	private Socket socket;
 	private BufferedReader serverReader;
 	private List<String> messageQueue;
@@ -21,7 +18,7 @@ public class PublicListener implements Runnable{
 	private boolean print = true;
 
 	
-	public PublicListener(Socket socket, BufferedReader serverReader, List<String> messageQueue, Object lock, Shell shell) {
+	public PublicTcpListenerThread(Socket socket, BufferedReader serverReader, List<String> messageQueue, Object lock, Shell shell) {
 		this.socket = socket;
 		this.serverReader = serverReader;
 		this.messageQueue = messageQueue;

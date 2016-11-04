@@ -18,6 +18,10 @@ import java.util.List;
 
 import cli.Command;
 import cli.Shell;
+import client.tcp.PrivateTcpListnerThread;
+import client.tcp.PrivateTcpWriterThread;
+import client.tcp.PublicTcpListenerThread;
+import client.udp.PublicUdpListenerThread;
 import util.Config;
 
 public class Client implements IClientCli, Runnable {
@@ -31,8 +35,8 @@ public class Client implements IClientCli, Runnable {
 	private PrintStream userResponseStream;
 	private BufferedReader serverReader;
 	private PrintWriter serverWriter;
-	private PrivateListner privateListner;
-	private PublicListener publicListener;
+	private PrivateTcpListnerThread privateListner;
+	private PublicTcpListenerThread publicListener;
 	private List<String> messageQueue;
 	private Object lock;
 	
@@ -76,7 +80,7 @@ public class Client implements IClientCli, Runnable {
 			serverWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
 			
 			/* start thread for messages from the server */
-			publicListener = new PublicListener(tcpSocket, serverReader, messageQueue, lock,shell);
+			publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, messageQueue, lock,shell);
 			Thread publicListenerThread = new Thread(publicListener);
 			publicListenerThread.start();
 		}
@@ -183,7 +187,7 @@ public class Client implements IClientCli, Runnable {
 		udpSocket.send(packet);	// send udp packet to server
 		
 		// start thread to listen to server response
-		UDPListenerThread udpListnerThread = new UDPListenerThread(shell, udpSocket);
+		PublicUdpListenerThread udpListnerThread = new PublicUdpListenerThread(shell, udpSocket);
 		new Thread(udpListnerThread).start();
 	
 		return null;
@@ -205,7 +209,7 @@ public class Client implements IClientCli, Runnable {
 		
 		String parts[] = response.split(":");
 		
-		Thread privateWriterThread = new Thread(new PrivateWriter(message, username, parts[0], Integer.parseInt(parts[1]), shell));
+		Thread privateWriterThread = new Thread(new PrivateTcpWriterThread(message, username, parts[0], Integer.parseInt(parts[1]), shell));
 		privateWriterThread.start();
 		
 		return null;
@@ -250,7 +254,7 @@ public class Client implements IClientCli, Runnable {
 		waitForResponseAndDeleteLastMessage();
 	
 		/* setup Listener for private messages */
-		privateListner = new PrivateListner(port,shell);
+		privateListner = new PrivateTcpListnerThread(port,shell);
 		Thread privateListenerThread = new Thread(privateListner);
 		privateListenerThread.start();
 		
