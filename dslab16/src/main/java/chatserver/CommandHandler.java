@@ -30,21 +30,23 @@ public class CommandHandler {
 		{
 			if(u.getUsername().equals(username))
 			{
-				/* check if user already exists */
-				if(u.isActive()){
-					return addCommandResponsePrefix(ALREADY_LOGGED_IN);
-				}
-				else
-				{
-					/* check if password is correct */
-					if(u.getPassword().equals(password))
+				synchronized(u){	// necessary if two users log in simultaneously with the same username
+					/* check if user already exists */
+					if(u.isActive()){
+						return addCommandResponsePrefix(ALREADY_LOGGED_IN);
+					}
+					else
 					{
-						u.setActive(true);
-						u.setSocket(socket);
-						return addCommandResponsePrefix(SUCESSFULLY_LOGGED_IN);
-					}else
-					{
-						return addCommandResponsePrefix(WRONG_USERNAME_OR_PASSWORD);
+						/* check if password is correct */
+						if(u.getPassword().equals(password))
+						{
+							u.setActive(true);
+							u.setSocket(socket);
+							return addCommandResponsePrefix(SUCESSFULLY_LOGGED_IN);
+						}else
+						{
+							return addCommandResponsePrefix(WRONG_USERNAME_OR_PASSWORD);
+						}
 					}
 				}
 			}
@@ -67,8 +69,11 @@ public class CommandHandler {
 	}
 	
 	public String logout(User user){
-		user.setActive(false);
-		user.setRegistered(false);
+		
+		synchronized (user) {
+			user.setActive(false);
+			user.setRegistered(false);
+		}
 		
 		return addCommandResponsePrefix(SUCESSFULLY_LOGGED_OUT);
 	}
@@ -76,15 +81,18 @@ public class CommandHandler {
 	public void send(String message, User user){
 		for(User u:chatserver.GetUserList())
 		{
-			/* check if user is active and user is not sending user */
-			if(u.isActive() && !user.equals(u))
-			{
-				PrintWriter writerForUser;
-				try {
-					writerForUser = new PrintWriter(u.getSocket().getOutputStream(), true);
-					writerForUser.format("%s%s: %s%n",PUBLIC_MESSAGE_PREFIX, user.getUsername(), message);
-				} catch (IOException e) {
-					e.printStackTrace();
+			synchronized (u) {
+				
+				/* check if user is active and user is not sending user */
+				if(u.isActive() && !user.equals(u))
+				{
+					PrintWriter writerForUser;
+					try {
+						writerForUser = new PrintWriter(u.getSocket().getOutputStream(), true);
+						writerForUser.format("%s%s: %s%n",PUBLIC_MESSAGE_PREFIX, user.getUsername(), message);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -94,9 +102,11 @@ public class CommandHandler {
 
 		for(User u:chatserver.GetUserList())
 		{
-			if(u.isRegistered() && u.getUsername().equals(username))
-			{
-				return addCommandResponsePrefix(String.format("%s:%d%n",u.getIp(), u.getPort()));
+			synchronized (u) {
+				if(u.isRegistered() && u.getUsername().equals(username))
+				{
+					return addCommandResponsePrefix(String.format("%s:%d%n",u.getIp(), u.getPort()));
+				}
 			}
 		}
 		
@@ -105,9 +115,12 @@ public class CommandHandler {
 	
 	public String register(User user, String address, int port){
 		
-		user.setRegistered(true);
-		user.setIp(address);
-		user.setPort(port);
+		synchronized (user) {
+		
+			user.setRegistered(true);
+			user.setIp(address);
+			user.setPort(port);
+		}
 		
 		return addCommandResponsePrefix(String.format("%s %s.%n",SUCCESSFULLY_REGISTERED_ADDRESS, user.getUsername()));
 	}
