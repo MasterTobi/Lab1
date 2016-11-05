@@ -39,7 +39,6 @@ public class Client implements IClientCli, Runnable {
 	private PublicTcpListenerThread publicListener;
 	private List<String> publicMessageQueue;
 	private List<String> commandResponseQueue;
-	private Object lock;
 	
 	private final String COULD_NOT_ESTABLISH_CONNECTION = "Could not establish connection.";
 	private final String PRIVATE_ADDRESS_INCORRECT = "PrivateAddress is not correct!";
@@ -67,7 +66,6 @@ public class Client implements IClientCli, Runnable {
 		
 		publicMessageQueue = new LinkedList<String>();
 		commandResponseQueue = new LinkedList<String>();
-		lock = new Object();
 		
 		shell = new Shell(componentName, userRequestStream, userResponseStream);
 		shell.register(this);
@@ -276,7 +274,7 @@ public class Client implements IClientCli, Runnable {
 			serverWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
 			
 			/* start thread for messages from the server */
-			publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, publicMessageQueue, commandResponseQueue, lock,shell);
+			publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, publicMessageQueue, commandResponseQueue, shell);
 			Thread publicListenerThread = new Thread(publicListener);
 			publicListenerThread.start();
 		}
@@ -304,10 +302,10 @@ public class Client implements IClientCli, Runnable {
 	{
 		int messageQueueSize = queue.size();
 		
-		synchronized(lock){
+		synchronized(queue){
 			while(messageQueueSize +1 != queue.size()){
 				try {
-					lock.wait();
+					queue.wait();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
