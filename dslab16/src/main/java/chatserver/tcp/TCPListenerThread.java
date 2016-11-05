@@ -19,19 +19,23 @@ public class TCPListenerThread implements Runnable {
 
 	public void run() {
 		
-		boolean interupted = false;
-
-		while (!interupted) {
-			Socket socket = null;
+		while (!serverSocket.isClosed() && !Thread.interrupted()) {
 			
+			Socket socket = null;
 			
 			try {
 				// wait for Client to connect
 				socket = serverSocket.accept();
 				// start new thread that handles client requests
 				new Thread(new TCPHandlerThread(socket,chatserver)).start();
-			} catch (IOException e) {	// SocketException is a subtype of IOException
-				interupted = true;
+			}
+			catch(SocketException e)
+			{
+				// thrown if socket is closed
+			}
+			catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}

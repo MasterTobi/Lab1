@@ -10,6 +10,8 @@ public class CommandHandler {
 
 	Chatserver chatserver;
 	
+	private final String COMMAND_RESPONSE_PREFIX = "!command_response";
+	private final String PUBLIC_MESSAGE_PREFIX = "!public_message";
 	private final String WRONG_USERNAME_OR_PASSWORD = "Wrong username or password.";
 	private final String ALREADY_LOGGED_IN = "You are already logged in!";
 	private final String SUCESSFULLY_LOGGED_IN = "Successfully logged in.";
@@ -30,7 +32,7 @@ public class CommandHandler {
 			{
 				/* check if user already exists */
 				if(u.isActive()){
-					return ALREADY_LOGGED_IN;
+					return addCommandResponsePrefix(ALREADY_LOGGED_IN);
 				}
 				else
 				{
@@ -39,16 +41,16 @@ public class CommandHandler {
 					{
 						u.setActive(true);
 						u.setSocket(socket);
-						return SUCESSFULLY_LOGGED_IN;
+						return addCommandResponsePrefix(SUCESSFULLY_LOGGED_IN);
 					}else
 					{
-						return WRONG_USERNAME_OR_PASSWORD;
+						return addCommandResponsePrefix(WRONG_USERNAME_OR_PASSWORD);
 					}
 				}
 			}
 		}
 		
-		return WRONG_USERNAME_OR_PASSWORD;
+		return addCommandResponsePrefix(WRONG_USERNAME_OR_PASSWORD);
 	}
 	
 	public User getUser(String username)
@@ -66,8 +68,9 @@ public class CommandHandler {
 	
 	public String logout(User user){
 		user.setActive(false);
+		user.setRegistered(false);
 		
-		return SUCESSFULLY_LOGGED_OUT;
+		return addCommandResponsePrefix(SUCESSFULLY_LOGGED_OUT);
 	}
 	
 	public void send(String message, User user){
@@ -79,7 +82,7 @@ public class CommandHandler {
 				PrintWriter writerForUser;
 				try {
 					writerForUser = new PrintWriter(u.getSocket().getOutputStream(), true);
-					writerForUser.format("%s: %s%n",user.getUsername(), message);
+					writerForUser.format("%s%s: %s%n",PUBLIC_MESSAGE_PREFIX, user.getUsername(), message);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -93,11 +96,11 @@ public class CommandHandler {
 		{
 			if(u.isRegistered() && u.getUsername().equals(username))
 			{
-				return String.format("%s:%d%n",u.getIp(), u.getPort());
+				return addCommandResponsePrefix(String.format("%s:%d%n",u.getIp(), u.getPort()));
 			}
 		}
 		
-		return WRONG_USER_OR_NOT_REGISTERED;
+		return addCommandResponsePrefix(WRONG_USER_OR_NOT_REGISTERED);
 	}
 	
 	public String register(User user, String address, int port){
@@ -106,9 +109,10 @@ public class CommandHandler {
 		user.setIp(address);
 		user.setPort(port);
 		
-		return String.format("%s %s.%n",SUCCESSFULLY_REGISTERED_ADDRESS, user.getUsername());
+		return addCommandResponsePrefix(String.format("%s %s.%n",SUCCESSFULLY_REGISTERED_ADDRESS, user.getUsername()));
 	}
 
+	/* list is the only service that is offered over UDP */
 	public String list() {
 
 		String onlineList = "Online users:";
@@ -119,11 +123,15 @@ public class CommandHandler {
 			}
 		}
 		
-		return onlineList;
+		return addCommandResponsePrefix(onlineList);
 	}
 	
 	public String unknownCommand(){
-		return UNKNONWN_COMMAND;
+		return addCommandResponsePrefix(UNKNONWN_COMMAND);
+	}
+	
+	private String addCommandResponsePrefix(String message){
+		return String.format("%s%s",COMMAND_RESPONSE_PREFIX,message);
 	}
 	
 }

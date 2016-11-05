@@ -12,19 +12,24 @@ public class PublicTcpListenerThread implements Runnable{
 	
 	private Socket socket;
 	private BufferedReader serverReader;
-	private List<String> messageQueue;
+	private List<String> publicMessageQueue;
+	private List<String> commandResponseQueue;
 	private Object lock;
 	private Shell shell;
-	private boolean print = true;
+	
+	private final String COMMAND_RESPONSE_PREFIX = "!command_response";
+	private final String PUBLIC_MESSAGE_PREFIX = "!public_message";
 
 	
-	public PublicTcpListenerThread(Socket socket, BufferedReader serverReader, List<String> messageQueue, Object lock, Shell shell) {
+	public PublicTcpListenerThread(Socket socket, BufferedReader serverReader, List<String> publicMessageQueue, List<String> commandResponseQueue, Object lock, Shell shell) {
 		this.socket = socket;
 		this.serverReader = serverReader;
-		this.messageQueue = messageQueue;
+		this.publicMessageQueue = publicMessageQueue;
+		this.commandResponseQueue = commandResponseQueue;
 		this.lock = lock;
 		this.shell = shell;
 	}
+
 
 	@Override
 	public void run() {
@@ -34,14 +39,16 @@ public class PublicTcpListenerThread implements Runnable{
 		try {
 			while(!socket.isClosed() && Thread.interrupted() == false && (message = serverReader.readLine()) != null)
 			{	
-				if(print){
+				
+				if(message.startsWith(COMMAND_RESPONSE_PREFIX))
+				{
+					commandResponseQueue.add(message.replaceFirst(COMMAND_RESPONSE_PREFIX, ""));
+				}
+				else if(message.startsWith(PUBLIC_MESSAGE_PREFIX)){
+					message = message.replaceFirst(PUBLIC_MESSAGE_PREFIX, "");
+					publicMessageQueue.add(message);
 					shell.writeLine(message);
 				}
-				else{
-					print = true;	// print next line
-				}
-			
-				messageQueue.add(message);
 			
 				synchronized (lock) {
 					lock.notify();
@@ -55,9 +62,5 @@ public class PublicTcpListenerThread implements Runnable{
 		catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	public void doNotPrintNextLine() {
-		print = false;
 	}
 }

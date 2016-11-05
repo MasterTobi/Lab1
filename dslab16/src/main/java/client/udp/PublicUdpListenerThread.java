@@ -12,6 +12,8 @@ public class PublicUdpListenerThread implements Runnable{
 	private Shell shell;
 	private DatagramSocket socket;
 	
+	private final String COMMAND_RESPONSE_PREFIX = "!command_response";
+	
 	public PublicUdpListenerThread(Shell shell, DatagramSocket socket) {
 		this.shell = shell;
 		this.socket = socket;
@@ -27,7 +29,12 @@ public class PublicUdpListenerThread implements Runnable{
 			
 			socket.receive(packet);	// wait for server response
 
-			shell.writeLine(new String(packet.getData()));
+			String message = new String(packet.getData());
+			if(message.startsWith(COMMAND_RESPONSE_PREFIX))
+			{
+				message = message.replaceFirst(COMMAND_RESPONSE_PREFIX, "");
+				shell.writeLine(message);
+			}
 			
 		}
 		catch (SocketException e) {

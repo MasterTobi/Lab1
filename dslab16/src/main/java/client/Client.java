@@ -37,7 +37,8 @@ public class Client implements IClientCli, Runnable {
 	private PrintWriter serverWriter;
 	private PrivateTcpListnerThread privateListner;
 	private PublicTcpListenerThread publicListener;
-	private List<String> messageQueue;
+	private List<String> publicMessageQueue;
+	private List<String> commandResponseQueue;
 	private Object lock;
 	
 	private final String COULD_NOT_ESTABLISH_CONNECTION = "Could not establish connection.";
@@ -64,7 +65,8 @@ public class Client implements IClientCli, Runnable {
 		this.userRequestStream = userRequestStream;
 		this.userResponseStream = userResponseStream;
 		
-		messageQueue = new LinkedList<String>();
+		publicMessageQueue = new LinkedList<String>();
+		commandResponseQueue = new LinkedList<String>();
 		lock = new Object();
 		
 		shell = new Shell(componentName, userRequestStream, userResponseStream);
@@ -92,9 +94,7 @@ public class Client implements IClientCli, Runnable {
 		// write login command to server	
 		serverWriter.format("!login %s %s%n",username,password);
 		
-		waitForResponseAndDeleteLastMessage();
-		
-		return null;
+		return waitForResponse(commandResponseQueue);
 	}
 
 	@Override
@@ -109,11 +109,11 @@ public class Client implements IClientCli, Runnable {
 		// write login command to server
 		serverWriter.println("!logout");
 		
-		waitForResponseAndDeleteLastMessage();
+		String response  = waitForResponse(commandResponseQueue);
 		
 		tcpSocket.close();
 		
-		return null;
+		return response;
 	}
 
 	@Override
@@ -158,10 +158,9 @@ public class Client implements IClientCli, Runnable {
 			return NOT_LOGGED_IN;
 		}
 
-		publicListener.doNotPrintNextLine();
 		serverWriter.println("!lookup "+ username);
 		
-		String response  = waitForResponseAndDeleteLastMessage();
+		String response  = waitForResponse(publicMessageQueue);
 		
 		if(!response.matches("(.*):(.*)"))
 		{
@@ -187,10 +186,8 @@ public class Client implements IClientCli, Runnable {
 		
 		// write lookup command to server
 		serverWriter.println("!lookup "+ username);
-
-		waitForResponseAndDeleteLastMessage();
 		
-		return null;
+		return waitForResponse(commandResponseQueue);
 	}
 
 	@Override
@@ -220,26 +217,26 @@ public class Client implements IClientCli, Runnable {
 		
 		serverWriter.format("!register %s%n",privateAddress);
 		
-		waitForResponseAndDeleteLastMessage();
+		String response = waitForResponse(commandResponseQueue);
 	
 		/* setup Listener for private messages */
 		privateListner = new PrivateTcpListnerThread(port,shell);
 		Thread privateListenerThread = new Thread(privateListner);
 		privateListenerThread.start();
 		
-		return null;
+		return response;
 	}
 	
 	@Override
 	@Command
 	public String lastMsg() throws IOException {
 		
-		if(messageQueue.size() == 0)
+		if(publicMessageQueue.size() == 0)
 		{
 			return NO_MESSAGE_RECEIVED;
 		}
 		
-		return messageQueue.get(messageQueue.size()-1);
+		return publicMessageQueue.get(publicMessageQueue.size()-1);
 	}
 
 	@Override
@@ -279,7 +276,7 @@ public class Client implements IClientCli, Runnable {
 			serverWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
 			
 			/* start thread for messages from the server */
-			publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, messageQueue, lock,shell);
+			publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, publicMessageQueue, commandResponseQueue, lock,shell);
 			Thread publicListenerThread = new Thread(publicListener);
 			publicListenerThread.start();
 		}
@@ -303,31 +300,21 @@ public class Client implements IClientCli, Runnable {
 		return !tcpSocket.isClosed();
 	}
 	
-
-	private String waitForResponseAndDeleteLastMessage()
+	private String waitForResponse(List<String> queue)
 	{
-		String response = waitForResponse();
-		messageQueue.remove(response);
-		
-		return response;
-	}
-	
-	private String waitForResponse()
-	{
-		int messageQueueSize = messageQueue.size();
+		int messageQueueSize = queue.size();
 		
 		synchronized(lock){
-			while(messageQueueSize +1 != messageQueue.size()){
+			while(messageQueueSize +1 != queue.size()){
 				try {
 					lock.wait();
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 		}
 		
-		return messageQueue.get(messageQueueSize);
+		return queue.get(messageQueueSize);
 	}
 	
 	/**

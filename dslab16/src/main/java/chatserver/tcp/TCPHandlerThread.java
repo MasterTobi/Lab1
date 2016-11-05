@@ -103,7 +103,7 @@ public class TCPHandlerThread implements Runnable{
 		}
 		catch(SocketException e)
 		{
-			// socket closed
+			// thrown if socket is closed
 		}
 		catch (IOException e) {
 			// TODO Auto-generated catch block
