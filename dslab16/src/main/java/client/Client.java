@@ -45,6 +45,7 @@ public class Client implements IClientCli, Runnable {
 	private final String PORT_NOT_A_NUMBER = "Port is not a number!";
 	private final String NO_MESSAGE_RECEIVED = "No message received!";
 	private final String WORONG_USER_OR_USER_NOT_REACHABLE = "Wrong username or user not reachable.";
+	private final String NOT_LOGGED_IN = "You are not logged in!";
 
 	/**
 	 * @param componentName
@@ -70,32 +71,6 @@ public class Client implements IClientCli, Runnable {
 		shell.register(this);
 		
 		try {
-			/* create tcp socket with server hostname and server port */
-			tcpSocket = new Socket(config.getString("chatserver.host"),config.getInt("chatserver.tcp.port"));
-			
-			// create a reader to retrieve messages send by the server
-			serverReader = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
-			
-			// create a writer to send messages to the server
-			serverWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
-			
-			/* start thread for messages from the server */
-			publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, messageQueue, lock,shell);
-			Thread publicListenerThread = new Thread(publicListener);
-			publicListenerThread.start();
-		}
-		catch (ConnectException e) {
-			userResponseStream.println(COULD_NOT_ESTABLISH_CONNECTION);
-			try {
-				exit();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		try {
 			udpSocket = new DatagramSocket();
 		} catch (SocketException e) {
 			e.printStackTrace();
@@ -111,56 +86,32 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String login(String username, String password) throws IOException {
-		// TODO Auto-generated method stub
 		
-		// write login command to server
-		int messageQueueSize = messageQueue.size();
+		createTcpServerSocket();
 		
+		// write login command to server	
 		serverWriter.format("!login %s %s%n",username,password);
 		
 		waitForResponseAndDeleteLastMessage();
 		
 		return null;
-		/*
-		synchronized(publicListenerThread)
-		{
-			try {
-				publicListenerThread.wait();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		
-		response = serverReader.readLine();
-		
-		synchronized(publicListenerThread)
-		{
-			publicListenerThread.notify();
-		}*/
-		
-		/*synchronized(lock){
-			while(messageQueueSize +1 != messageQueue.size()){
-				try {
-					lock.wait();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		return messageQueue.get(messageQueueSize);*/
 	}
 
 	@Override
 	@Command
 	public String logout() throws IOException {
 		
+		if(!isLoggedIn())
+		{
+			return NOT_LOGGED_IN;
+		}
+		
 		// write login command to server
 		serverWriter.println("!logout");
 		
 		waitForResponseAndDeleteLastMessage();
+		
+		tcpSocket.close();
 		
 		return null;
 	}
@@ -168,6 +119,11 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String send(String message) throws IOException {
+		
+		if(!isLoggedIn())
+		{
+			return NOT_LOGGED_IN;
+		}
 		
 		serverWriter.format("!send %s%n", message);
 		
@@ -196,6 +152,11 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String msg(String username, String message) throws IOException {
+		
+		if(!isLoggedIn())
+		{
+			return NOT_LOGGED_IN;
+		}
 
 		publicListener.doNotPrintNextLine();
 		serverWriter.println("!lookup "+ username);
@@ -219,12 +180,15 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String lookup(String username) throws IOException {
 		
-		String response = null;
+		if(!isLoggedIn())
+		{
+			return NOT_LOGGED_IN;
+		}
 		
 		// write lookup command to server
 		serverWriter.println("!lookup "+ username);
 
-		response  = waitForResponseAndDeleteLastMessage();
+		waitForResponseAndDeleteLastMessage();
 		
 		return null;
 	}
@@ -232,6 +196,11 @@ public class Client implements IClientCli, Runnable {
 	@Override
 	@Command
 	public String register(String privateAddress) throws IOException {
+		
+		if(!isLoggedIn())
+		{
+			return NOT_LOGGED_IN;
+		}
 		
 		int port;
 		
@@ -296,6 +265,44 @@ public class Client implements IClientCli, Runnable {
 		
 		return null;
 	}
+	
+	
+	private void createTcpServerSocket(){
+		try {
+			/* create tcp socket with server hostname and server port */
+			tcpSocket = new Socket(config.getString("chatserver.host"),config.getInt("chatserver.tcp.port"));
+			
+			// create a reader to retrieve messages send by the server
+			serverReader = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
+			
+			// create a writer to send messages to the server
+			serverWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
+			
+			/* start thread for messages from the server */
+			publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, messageQueue, lock,shell);
+			Thread publicListenerThread = new Thread(publicListener);
+			publicListenerThread.start();
+		}
+		catch (ConnectException e) {
+			userResponseStream.println(COULD_NOT_ESTABLISH_CONNECTION);
+			try {
+				exit();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public boolean isLoggedIn()
+	{
+		if(tcpSocket == null)
+			return false;
+		
+		return !tcpSocket.isClosed();
+	}
+	
 
 	private String waitForResponseAndDeleteLastMessage()
 	{

@@ -51,12 +51,19 @@ public class TCPHandlerThread implements Runnable{
 						String password = parts[2];
 						writer.println(commandHandler.login(username,password, socket));
 						user = commandHandler.getUser(username);
+						
+						/* if login wasn't successful then close socket */
+						if(user.isActive() == false)
+						{
+							socket.close();
+						}
 					}
 					
 					/* logout command */
 					else if (request.startsWith("!logout"))
 					{	
 						writer.println(commandHandler.logout(user));
+						socket.close();
 					}
 					
 					/* send command*/
