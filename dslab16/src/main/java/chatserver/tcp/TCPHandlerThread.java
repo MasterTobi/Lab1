@@ -49,11 +49,17 @@ public class TCPHandlerThread implements Runnable{
 					if (request.startsWith("!login") && parts.length == 3) {
 						String username = parts[1];
 						String password = parts[2];
-						writer.println(commandHandler.login(username,password, socket));
+						boolean alreadyLoggedIn = false;
+						
 						user = commandHandler.getUser(username);
+						if(user != null){
+							alreadyLoggedIn = user.isActive();
+						}
+						
+						writer.println(commandHandler.login(username,password, socket));
 						
 						/* if login wasn't successful then close socket */
-						if(user.isActive() == false)
+						if(user == null || alreadyLoggedIn || user.isActive() == false)
 						{
 							socket.close();
 						}

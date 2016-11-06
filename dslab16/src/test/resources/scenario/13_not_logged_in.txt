@@ -2,19 +2,19 @@
 *	Client		alice.vienna.at
 
 alice.vienna.at:	!logout
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!send hallo du
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!register localhost:12321
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!lookup mmdmdmdm
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!msg user msg
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!lastMsg
 >					verify("No message received!")
@@ -29,19 +29,19 @@ alice.vienna.at:	!logout
 >					verify("Successfully logged out.")
 
 alice.vienna.at:	!logout
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!send hallo du
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!register localhost:12321
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!lookup mmdmdmdm
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!msg user msg
->					verify("You are not logged in!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!lastMsg
 >					verify("No message received!")

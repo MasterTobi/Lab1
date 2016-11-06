@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import cli.Shell;
@@ -14,9 +15,10 @@ import util.Config;
 
 public class PrivateTcpWriterThread implements Runnable{
 
-	String message;
-	String username;
-	String ip;
+	private Socket socket;
+	private String message;
+	private String username;
+	private String ip;
 	int port;
 	private Shell shell;
 	
@@ -30,24 +32,56 @@ public class PrivateTcpWriterThread implements Runnable{
 	}
 	
 	@Override
-	public void run() {
+	public void run(){
 		
-		try (
-			Socket socket = new Socket(ip,port);
-			
+		BufferedReader reader = null;
+		PrintWriter writer = null;
+		
+		try { 
+			socket = new Socket(ip,port);
 			// create a reader to retrieve !ack send by the the other client
-			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			// create a writer to send private messages to the the other client
-			PrintWriter writer= new PrintWriter(socket.getOutputStream(), true);	
-		){
+			writer= new PrintWriter(socket.getOutputStream(), true);	
+		
 			writer.println(message);
-			shell.writeLine(String.format("%s replied with %s%n", username, reader.readLine()));
-			
+			shell.writeLine(String.format("%s replied with %s.%n", username, reader.readLine()));
+		}
+		catch (SocketException e){
+			// thrown if socket is closed
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			try {
+				shell.writeLine(String.format("%s is an unknown host!", ip));
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally{
+			
+			try {
+				if(socket != null){
+					socket.close();
+				}
+				if(reader != null){
+					reader.close();
+				}
+				if(writer != null){
+					writer.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public void close() {
+		try {
+			if(socket != null){
+				socket.close();
+			}
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}

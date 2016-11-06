@@ -35,17 +35,20 @@ public class Client implements IClientCli, Runnable {
 	private PrintStream userResponseStream;
 	private BufferedReader serverReader;
 	private PrintWriter serverWriter;
-	private PrivateTcpListnerThread privateListner;
-	private PublicTcpListenerThread publicListener;
+	private PrivateTcpListnerThread privateTcpListner;
+	private PrivateTcpWriterThread privateTcpWriter;
 	private List<String> publicMessageQueue;
 	private List<String> commandResponseQueue;
 	
 	private final String COULD_NOT_ESTABLISH_CONNECTION = "Could not establish connection.";
 	private final String PRIVATE_ADDRESS_INCORRECT = "PrivateAddress is not correct!";
 	private final String PORT_NOT_A_NUMBER = "Port is not a number!";
+	private final String PORT_OUT_OF_RANGE = "Port value out of range!";
 	private final String NO_MESSAGE_RECEIVED = "No message received!";
 	private final String WORONG_USER_OR_USER_NOT_REACHABLE = "Wrong username or user not reachable.";
-	private final String NOT_LOGGED_IN = "You are not logged in!";
+	private final String NOT_LOGGED_IN = "Not logged in.";
+	private final String SUCESSFULLY_LOGGED_IN = "Successfully logged in.";
+	
 
 	/**
 	 * @param componentName
@@ -92,7 +95,14 @@ public class Client implements IClientCli, Runnable {
 		// write login command to server	
 		serverWriter.format("!login %s %s%n",username,password);
 		
-		return waitForResponse(commandResponseQueue);
+		String response = waitForResponse(commandResponseQueue);
+		
+		if(!response.equals(SUCESSFULLY_LOGGED_IN))
+		{
+			tcpSocket.close();
+		}
+		
+		return response;
 	}
 
 	@Override
@@ -156,18 +166,17 @@ public class Client implements IClientCli, Runnable {
 			return NOT_LOGGED_IN;
 		}
 
-		serverWriter.println("!lookup "+ username);
+		String lookupResponse = lookup(username);
 		
-		String response  = waitForResponse(publicMessageQueue);
-		
-		if(!response.matches("(.*):(.*)"))
+		if(!lookupResponse.matches("(.*):(.*)"))
 		{
 			return WORONG_USER_OR_USER_NOT_REACHABLE;
 		}
 		
-		String parts[] = response.split(":");
+		String parts[] = lookupResponse.split(":");
 		
-		Thread privateWriterThread = new Thread(new PrivateTcpWriterThread(message, username, parts[0], Integer.parseInt(parts[1]), shell));
+		privateTcpWriter = new PrivateTcpWriterThread(message, username, parts[0], Integer.parseInt(parts[1]), shell);
+		Thread privateWriterThread = new Thread(privateTcpWriter);
 		privateWriterThread.start();
 		
 		return null;
@@ -207,6 +216,9 @@ public class Client implements IClientCli, Runnable {
 		
 		try{
 			port = Integer.parseInt(parts[1]);
+			if(port < 0 || port > 65535){
+				return PORT_OUT_OF_RANGE;
+			}
 		}
 		catch(NumberFormatException e)
 		{
@@ -216,10 +228,16 @@ public class Client implements IClientCli, Runnable {
 		serverWriter.format("!register %s%n",privateAddress);
 		
 		String response = waitForResponse(commandResponseQueue);
+		
+		/* if user has already registered a address then close old public listener */
+		if(privateTcpListner != null)
+		{
+			privateTcpListner.close();
+		}
 	
 		/* setup Listener for private messages */
-		privateListner = new PrivateTcpListnerThread(port,shell);
-		Thread privateListenerThread = new Thread(privateListner);
+		privateTcpListner = new PrivateTcpListnerThread(port,shell);
+		Thread privateListenerThread = new Thread(privateTcpListner);
 		privateListenerThread.start();
 		
 		return response;
@@ -241,14 +259,24 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String exit() throws IOException {
 		
-		/* terminate socket for communication with server */
-		if(tcpSocket != null){
-			tcpSocket.close();
+		logout();	// logout also close tcpSocket
+		
+		if(serverReader != null){
+			serverReader.close();
 		}
 		
-		if(privateListner != null)
+		if(serverWriter != null){
+			serverWriter.close();
+		}
+		
+		if(privateTcpListner != null)
 		{
-			privateListner.close();
+			privateTcpListner.close();
+		}
+		
+		if(privateTcpWriter != null)
+		{
+			privateTcpWriter.close();
 		}
 		
 		/* terminate shell thread */
@@ -274,7 +302,7 @@ public class Client implements IClientCli, Runnable {
 			serverWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
 			
 			/* start thread for messages from the server */
-			publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, publicMessageQueue, commandResponseQueue, shell);
+			PublicTcpListenerThread publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, publicMessageQueue, commandResponseQueue, shell);
 			Thread publicListenerThread = new Thread(publicListener);
 			publicListenerThread.start();
 		}
@@ -322,11 +350,13 @@ public class Client implements IClientCli, Runnable {
 	public static void main(String[] args) {
 		Client client = new Client(args[0], new Config("client"), System.in,
 				System.out);
-		// TODO remove (just for debugging)
-		/*Client client = new Client("c", new Config("client"), System.in,
-				System.out);*/
+
 		// TODO: start the client
 		new Thread(client).start();
+		
+		/* as the application only uses user-threads, the jvm will wait till all threads are finished =>
+		 * it is not neccessary to wait (thread.join();) for them
+		 */
 	}
 
 	// --- Commands needed for Lab 2. Please note that you do not have to

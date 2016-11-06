@@ -31,7 +31,7 @@ public class PrivateTcpListnerThread implements Runnable{
 			
 			privateServerSocket = new ServerSocket(port);
 			
-			while (!Thread.interrupted()) {
+			while (!privateServerSocket.isClosed() && !Thread.interrupted()) {
 				
 				try (	// try with resources
 					// wait for Client to connect
@@ -66,7 +66,9 @@ public class PrivateTcpListnerThread implements Runnable{
 	
 	public void close(){
 		try {
-			privateServerSocket.close();
+			if(privateServerSocket != null){
+				privateServerSocket.close();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

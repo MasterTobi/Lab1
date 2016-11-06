@@ -13,7 +13,7 @@ public class CommandHandler {
 	private final String COMMAND_RESPONSE_PREFIX = "!command_response";
 	private final String PUBLIC_MESSAGE_PREFIX = "!public_message";
 	private final String WRONG_USERNAME_OR_PASSWORD = "Wrong username or password.";
-	private final String ALREADY_LOGGED_IN = "You are already logged in!";
+	private final String ALREADY_LOGGED_IN = "Already logged in.";
 	private final String SUCESSFULLY_LOGGED_IN = "Successfully logged in.";
 	private final String SUCESSFULLY_LOGGED_OUT = "Successfully logged out.";
 	private final String WRONG_USER_OR_NOT_REGISTERED = "Wrong username or user not registered.";
