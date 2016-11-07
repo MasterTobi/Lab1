@@ -1,0 +1,50 @@
+*	Chatserver	chatserver
+*	Client		alice.vienna.at
+
+alice.vienna.at:	!logout
+>					verify("Not logged in.")
+
+alice.vienna.at:	!send hallo du
+>					verify("Not logged in.")
+
+alice.vienna.at:	!register localhost:12321
+>					verify("Not logged in.")
+
+alice.vienna.at:	!lookup mmdmdmdm
+>					verify("Not logged in.")
+
+alice.vienna.at:	!msg user msg
+>					verify("Not logged in.")
+
+alice.vienna.at:	!lastMsg
+>					verify("Not logged in.")
+
+alice.vienna.at:	!list
+>					verify("Online users:")
+
+alice.vienna.at:	!login alice.vienna.at 12345
+>					verify("Successfully logged in.")
+
+alice.vienna.at:	!logout
+>					verify("Successfully logged out.")
+
+alice.vienna.at:	!logout
+>					verify("Not logged in.")
+
+alice.vienna.at:	!send hallo du
+>					verify("Not logged in.")
+
+alice.vienna.at:	!register localhost:12321
+>					verify("Not logged in.")
+
+alice.vienna.at:	!lookup mmdmdmdm
+>					verify("Not logged in.")
+
+alice.vienna.at:	!msg user msg
+>					verify("Not logged in.")
+
+alice.vienna.at:	!lastMsg
+>					verify("Not logged in.")
+
+chatserver: 		!exit
+alice.vienna.at:	!exit

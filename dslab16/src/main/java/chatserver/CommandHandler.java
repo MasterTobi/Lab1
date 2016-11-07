@@ -89,7 +89,9 @@ public class CommandHandler {
 					PrintWriter writerForUser;
 					try {
 						writerForUser = new PrintWriter(u.getSocket().getOutputStream(), true);
-						writerForUser.format("%s%s: %s%n",PUBLIC_MESSAGE_PREFIX, user.getUsername(), message);
+						synchronized (u.getSocket()) {	
+							writerForUser.format("%s%s: %s%n",PUBLIC_MESSAGE_PREFIX, user.getUsername(), message);
+						}
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

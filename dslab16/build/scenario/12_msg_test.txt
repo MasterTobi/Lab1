@@ -1,0 +1,41 @@
+*	Chatserver	chatserver
+*	Client		alice.vienna.at
+*	Client		bill.de
+
+alice.vienna.at:	!login alice.vienna.at 12345
+>					verify("success")
+
+bill.de:				!login bill.de 23456
+>					verify("success")
+
+chatserver:			!users
+>					verify(".*alice.*online.*bill.*online.*", T(test.util.Flag).REGEX)
+
+alice.vienna.at:	!send Hallo mein name ist alice
+>					verify("name")
+
+bill.de:			!send Servus alice
+>					verify("alice")
+
+alice.vienna.at:	!register 127.0.0.1:7777
+>					verify("registered")
+
+bill.de:			!register localhost:8888
+>					verify("registered")
+
+alice.vienna.at:	!lookup bill.de
+>					verify("localhost:8888")
+
+alice.vienna.at:	!lookup billasdf.de
+>					verify("not")
+
+alice.vienna.at:	!msg bill.de hi bill it's alice
+>					verify("!msg bill.de hi bill it's alice")
+
+bill.de:			!msg alice.vienna.at: hi bill it's bill
+>					verify("!msg alice.vienna.at: hi bill it's bill")
+
+
+chatserver: 		!exit
+alice.vienna.at:	!exit
+bill.de:			!exit

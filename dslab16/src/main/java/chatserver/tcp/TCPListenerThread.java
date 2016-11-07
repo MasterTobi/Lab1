@@ -19,7 +19,7 @@ public class TCPListenerThread implements Runnable {
 
 	public void run() {
 		
-		while (!serverSocket.isClosed() && !Thread.interrupted()) {
+		while (!serverSocket.isClosed()) {
 			
 			Socket socket = null;
 			

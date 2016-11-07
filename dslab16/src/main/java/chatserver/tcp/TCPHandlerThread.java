@@ -16,7 +16,8 @@ public class TCPHandlerThread implements Runnable{
 	private Socket socket;
 	private User user;
 	private CommandHandler commandHandler;
-	
+	private BufferedReader reader;
+	private PrintWriter writer;
 
 	public TCPHandlerThread(Socket socket, Chatserver chatserver) {
 		this.socket = socket;
@@ -27,17 +28,16 @@ public class TCPHandlerThread implements Runnable{
 	@Override
 	public void run() {
 		
-		try (	// try with resources
+		try {	// try with resources
 			// prepare the input reader for the socket
-			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			// prepare the writer for responding to clients requests
-			PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-		)
-		{	
+			writer = new PrintWriter(socket.getOutputStream(), true);
+		
 			String request;
 		
 			// read client requests
-			while (socket.isClosed() == false && Thread.interrupted() == false && (request = reader.readLine()) != null) {
+			while (socket.isClosed() == false && (request = reader.readLine()) != null) {
 				
 				String[] parts = request.split("\\s");	// "\\s" is regex for single white space
 				
@@ -55,7 +55,7 @@ public class TCPHandlerThread implements Runnable{
 							alreadyLoggedIn = user.isActive();
 						}
 						
-						writer.println(commandHandler.login(username,password, socket));
+						write(commandHandler.login(username,password, socket));
 						
 						/* if login wasn't successful then close socket */
 						if(user == null || alreadyLoggedIn || user.isActive() == false)
@@ -67,7 +67,7 @@ public class TCPHandlerThread implements Runnable{
 					/* logout command */
 					else if (request.startsWith("!logout"))
 					{	
-						writer.println(commandHandler.logout(user));
+						write(commandHandler.logout(user));
 						socket.close();
 					}
 					
@@ -82,7 +82,7 @@ public class TCPHandlerThread implements Runnable{
 					else if(request.startsWith("!lookup") && parts.length == 2)
 					{
 						String username = parts[1];
-						writer.println(commandHandler.lookup(username));
+						write(commandHandler.lookup(username));
 					}
 					
 					/* register command */
@@ -92,17 +92,17 @@ public class TCPHandlerThread implements Runnable{
 						String address = connectionParts[0];
 						int port = Integer.parseInt(connectionParts[1]);
 						
-						writer.println(commandHandler.register(user, address, port));
+						write(commandHandler.register(user, address, port));
 					}
 					
 					else{
-						writer.println(commandHandler.unknownCommand());
+						write(commandHandler.unknownCommand());
 					}
 					
 				}
 				else
 				{
-					writer.println(commandHandler.unknownCommand());
+					write(commandHandler.unknownCommand());
 				}
 			}
 		}
@@ -113,6 +113,13 @@ public class TCPHandlerThread implements Runnable{
 		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+	}
+	
+	private void write(String message)
+	{
+		synchronized (socket) {	// make sure that a command response and a public message is not sent simultaneously 
+			writer.println(message);
 		}
 	}
 }
