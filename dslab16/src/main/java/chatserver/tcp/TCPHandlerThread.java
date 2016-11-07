@@ -9,14 +9,12 @@ import java.net.SocketException;
 
 import chatserver.Chatserver;
 import chatserver.CommandHandler;
-import chatserver.LoginException;
 import entity.User;
 
 public class TCPHandlerThread implements Runnable{
 
 	private Socket socket;
 	private User user;
-	PrintWriter writer;
 	CommandHandler commandHandler;
 	
 
@@ -47,6 +45,7 @@ public class TCPHandlerThread implements Runnable{
 				{
 					/* login command */
 					if (request.startsWith("!login") && parts.length == 3) {
+						
 						String username = parts[1];
 						String password = parts[2];
 						boolean alreadyLoggedIn = false;

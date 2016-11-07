@@ -49,7 +49,7 @@ bill.de:			!msg alice.vienna.at hi its bill
 >					verify("hi its bill")
 
 alice.vienna.at:	!msg bill.de hi its alice
-#>					verify("not_a_address is an unknown host!")
+# message will come after some time >					verify("not_a_address is an unknown host!")
 
 bill.de:			!register 127.0.0.1:7777
 >					verify("Successfully registered address for bill.de.")

@@ -35,7 +35,7 @@ public class PublicTcpListenerThread implements Runnable{
 		String message;
 		
 		try {
-			while(!socket.isClosed() && Thread.interrupted() == false && (message = serverReader.readLine()) != null)
+			while((message = serverReader.readLine()) != null)
 			{	
 				
 				if(message.startsWith(COMMAND_RESPONSE_PREFIX))
@@ -62,6 +62,20 @@ public class PublicTcpListenerThread implements Runnable{
 		}
 		catch (IOException e) {
 			e.printStackTrace();
+		}
+		
+		if(!socket.isClosed())
+		{
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		/* notify commandResponseQueue => command is not blocking */
+		synchronized (commandResponseQueue) {
+			commandResponseQueue.notify();
 		}
 	}
 }

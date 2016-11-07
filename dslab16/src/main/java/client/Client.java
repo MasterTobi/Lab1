@@ -48,6 +48,7 @@ public class Client implements IClientCli, Runnable {
 	private final String WORONG_USER_OR_USER_NOT_REACHABLE = "Wrong username or user not reachable.";
 	private final String NOT_LOGGED_IN = "Not logged in.";
 	private final String SUCESSFULLY_LOGGED_IN = "Successfully logged in.";
+	private final String ALREADY_LOGGED_IN = "Already logged in.";
 	
 
 	/**
@@ -72,12 +73,6 @@ public class Client implements IClientCli, Runnable {
 		
 		shell = new Shell(componentName, userRequestStream, userResponseStream);
 		shell.register(this);
-		
-		try {
-			udpSocket = new DatagramSocket();
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -90,14 +85,25 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String login(String username, String password) throws IOException {
 		
+		if(isLoggedIn())
+		{
+			return ALREADY_LOGGED_IN;
+		}
+		
 		createTcpServerSocket();
+		
+		// if createTcpServerSocket was not successfull
+		if(tcpSocket == null)
+		{
+			return null;
+		}
 		
 		// write login command to server	
 		serverWriter.format("!login %s %s%n",username,password);
 		
 		String response = waitForResponse(commandResponseQueue);
 		
-		if(!response.equals(SUCESSFULLY_LOGGED_IN))
+		if(response == null || !response.equals(SUCESSFULLY_LOGGED_IN))
 		{
 			tcpSocket.close();
 		}
@@ -144,15 +150,25 @@ public class Client implements IClientCli, Runnable {
 		
 		String request = "!list";
 		byte[] buffer = request.getBytes();
-		
-		DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
-				InetAddress.getByName(config.getString("chatserver.host")), config.getInt("chatserver.udp.port"));
-		
-		udpSocket.send(packet);	// send udp packet to server
-		
-		// start thread to listen to server response
-		PublicUdpListenerThread udpListnerThread = new PublicUdpListenerThread(shell, udpSocket);
-		new Thread(udpListnerThread).start();
+			
+		try{
+			if(udpSocket == null)
+			{
+				udpSocket = new DatagramSocket();
+			}
+			
+			DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
+					InetAddress.getByName(config.getString("chatserver.host")), config.getInt("chatserver.udp.port"));
+			
+			udpSocket.send(packet);	// send udp packet to server
+			
+			// start thread to listen to server response
+			PublicUdpListenerThread udpListnerThread = new PublicUdpListenerThread(shell, udpSocket);
+			new Thread(udpListnerThread).start();
+		}
+		catch(IOException e){
+			// connection not possible
+		}
 	
 		return null;
 	}
@@ -247,6 +263,11 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String lastMsg() throws IOException {
 		
+		if(!isLoggedIn())
+		{
+			return NOT_LOGGED_IN;
+		}
+		
 		if(publicMessageQueue.size() == 0)
 		{
 			return NO_MESSAGE_RECEIVED;
@@ -279,6 +300,11 @@ public class Client implements IClientCli, Runnable {
 			privateTcpWriter.close();
 		}
 		
+		if(udpSocket != null)
+		{
+			udpSocket.close();
+		}
+		
 		/* terminate shell thread */
 		if(shell != null){
 			shell.close();
@@ -307,10 +333,10 @@ public class Client implements IClientCli, Runnable {
 			publicListenerThread.start();
 		}
 		catch (ConnectException e) {
-			userResponseStream.println(COULD_NOT_ESTABLISH_CONNECTION);
 			try {
-				exit();
+				shell.writeLine(COULD_NOT_ESTABLISH_CONNECTION);
 			} catch (IOException e1) {
+				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		} catch (IOException e) {
@@ -331,13 +357,17 @@ public class Client implements IClientCli, Runnable {
 		int messageQueueSize = queue.size();
 		
 		synchronized(queue){
-			while(messageQueueSize +1 != queue.size()){
+			while(messageQueueSize +1 != queue.size() && !tcpSocket.isClosed()){
 				try {
 					queue.wait();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
+		}
+		
+		if(messageQueueSize +1 != queue.size()){
+			return null;
 		}
 		
 		return queue.get(messageQueueSize);
@@ -348,9 +378,10 @@ public class Client implements IClientCli, Runnable {
 	 *            the first argument is the name of the {@link Client} component
 	 */
 	public static void main(String[] args) {
+		//Client client = new Client("test", new Config("client"), System.in, System.out);	// for debugging
+
 		Client client = new Client(args[0], new Config("client"), System.in,
 				System.out);
-
 		// TODO: start the client
 		new Thread(client).start();
 		

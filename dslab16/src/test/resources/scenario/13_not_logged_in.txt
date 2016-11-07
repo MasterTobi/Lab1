@@ -17,7 +17,7 @@ alice.vienna.at:	!msg user msg
 >					verify("Not logged in.")
 
 alice.vienna.at:	!lastMsg
->					verify("No message received!")
+>					verify("Not logged in.")
 
 alice.vienna.at:	!list
 >					verify("Online users:")
@@ -44,7 +44,7 @@ alice.vienna.at:	!msg user msg
 >					verify("Not logged in.")
 
 alice.vienna.at:	!lastMsg
->					verify("No message received!")
+>					verify("Not logged in.")
 
 chatserver: 		!exit
 alice.vienna.at:	!exit

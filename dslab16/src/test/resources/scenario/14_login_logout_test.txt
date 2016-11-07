@@ -22,7 +22,7 @@ tom.ch:             !logout
 >                   verify("not logged in.")
 
 tom.ch:             !login alice.vienna.at 12345
->                   verify("user already logged in on another client.")
+>                   verify("Already logged in.")
 
 tom.ch:             !login tom.ch test
 >                   verify("successfully logged in.")

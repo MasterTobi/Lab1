@@ -28,7 +28,7 @@ public class PublicUdpListenerThread implements Runnable{
 			packet = new DatagramPacket(buffer, buffer.length);
 			
 			socket.receive(packet);	// wait for server response
-
+			
 			String message = new String(packet.getData());
 			if(message.startsWith(COMMAND_RESPONSE_PREFIX))
 			{
