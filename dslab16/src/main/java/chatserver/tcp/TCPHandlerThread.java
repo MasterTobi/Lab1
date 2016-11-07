@@ -15,7 +15,7 @@ public class TCPHandlerThread implements Runnable{
 
 	private Socket socket;
 	private User user;
-	CommandHandler commandHandler;
+	private CommandHandler commandHandler;
 	
 
 	public TCPHandlerThread(Socket socket, Chatserver chatserver) {

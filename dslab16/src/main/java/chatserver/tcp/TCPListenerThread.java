@@ -10,7 +10,7 @@ import chatserver.Chatserver;
 public class TCPListenerThread implements Runnable {
 
 	private ServerSocket serverSocket;
-	Chatserver chatserver;
+	private Chatserver chatserver;
 
 	public TCPListenerThread(ServerSocket serverSocket, Chatserver chatserver) {
 		this.serverSocket = serverSocket;

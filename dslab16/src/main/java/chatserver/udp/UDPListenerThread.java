@@ -9,8 +9,8 @@ import chatserver.Chatserver;
 
 public class UDPListenerThread implements Runnable{
 
-	DatagramSocket socket;
-	Chatserver server;
+	private DatagramSocket socket;
+	private Chatserver server;
 
 	public UDPListenerThread(DatagramSocket socket, Chatserver server) {
 		this.socket = socket;

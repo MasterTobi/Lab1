@@ -8,7 +8,7 @@ import entity.User;
 
 public class CommandHandler {
 
-	Chatserver chatserver;
+	private Chatserver chatserver;
 	
 	private final String COMMAND_RESPONSE_PREFIX = "!command_response";
 	private final String PUBLIC_MESSAGE_PREFIX = "!public_message";

@@ -19,7 +19,7 @@ public class PrivateTcpWriterThread implements Runnable{
 	private String message;
 	private String username;
 	private String ip;
-	int port;
+	private int port;
 	private Shell shell;
 	
 	public PrivateTcpWriterThread(String message, String username, String ip, int port, Shell shell)

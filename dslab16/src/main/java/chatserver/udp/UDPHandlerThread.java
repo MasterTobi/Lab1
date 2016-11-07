@@ -10,10 +10,10 @@ import chatserver.CommandHandler;
 
 public class UDPHandlerThread implements Runnable {
 
-	DatagramPacket packet;
-	DatagramSocket socket;
-	Chatserver chatserver;
-	CommandHandler commandHelper;
+	private DatagramPacket packet;
+	private DatagramSocket socket;
+	private Chatserver chatserver;
+	private CommandHandler commandHelper;
 	
 
 	public UDPHandlerThread(DatagramPacket packet, DatagramSocket socket, Chatserver chatserver) {
