@@ -271,7 +271,13 @@ public class Client implements IClientCli, Runnable {
 			return NO_MESSAGE_RECEIVED;
 		}
 		
-		return publicMessageQueue.get(publicMessageQueue.size()-1);
+		String lastMessage = null;
+		
+		synchronized (publicMessageQueue) {
+			lastMessage = publicMessageQueue.get(publicMessageQueue.size()-1);
+		}
+		
+		return lastMessage;
 	}
 
 	@Override
@@ -355,9 +361,9 @@ public class Client implements IClientCli, Runnable {
 		int messageQueueSize = queue.size();
 		
 		synchronized(queue){
-			while(messageQueueSize +1 != queue.size() && !tcpSocket.isClosed()){
+			while(messageQueueSize +1 != queue.size() && !tcpSocket.isClosed()){	// recognize spurious wakeup
 				try {
-					queue.wait();
+					queue.wait();	// note that wait relinquishes any and all synchronization claims on this object
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
