@@ -61,14 +61,8 @@ public class PrivateTcpWriterThread implements Runnable{
 		finally{
 			
 			try {
-				if(socket != null){
+				if(socket != null && !socket.isClosed()){
 					socket.close();
-				}
-				if(reader != null){
-					reader.close();
-				}
-				if(writer != null){
-					writer.close();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

@@ -10,6 +10,7 @@ public class CommandHandler {
 
 	private Chatserver chatserver;
 	
+	/* response messages */
 	private final String COMMAND_RESPONSE_PREFIX = "!command_response";
 	private final String PUBLIC_MESSAGE_PREFIX = "!public_message";
 	private final String WRONG_USERNAME_OR_PASSWORD = "Wrong username or password.";
@@ -28,9 +29,9 @@ public class CommandHandler {
 		
 		for(User u:chatserver.GetUserList())
 		{
-			if(u.getUsername().equals(username))
-			{
-				synchronized(u){	// necessary if two users log in simultaneously with the same username
+			synchronized(u){	// for example necessary if two users log in simultaneously with the same username
+				if(u.getUsername().equals(username))
+				{
 					/* check if user already exists */
 					if(u.isActive()){
 						return addCommandResponsePrefix(ALREADY_LOGGED_IN);
@@ -118,7 +119,6 @@ public class CommandHandler {
 	public String register(User user, String address, int port){
 		
 		synchronized (user) {
-		
 			user.setRegistered(true);
 			user.setIp(address);
 			user.setPort(port);

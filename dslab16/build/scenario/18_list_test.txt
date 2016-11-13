@@ -1,48 +1,58 @@
 *   Chatserver  chatserver
 *   Client      alice.vienna.at
-*   Client      tom.ch
-*   Client      max.us
+*   Client      tobi.eu
+*   Client      bill.de
 
 alice.vienna.at:    !login alice.vienna.at 12345
 >                   verify("successfully logged in.")
 
-tom.ch:             !list
+tobi.eu:            !list
 >                   verify(".*Online users:.*alice.vienna.at.*", T(test.util.Flag).REGEX)
 
-max.us:             !list
->                   verify("tom.ch", T(test.util.Flag).NOT)
+tobi.eu:            !list
+>                   verify("* tobi.eu", T(test.util.Flag).NOT)
 
-tom.ch:             !login tom.ch test
->                   verify("successfully logged in.")
+bill.de:            !list
+>                   verify("tobi.eu", T(test.util.Flag).NOT)
 
-tom.ch:             !list
->                   verify(".*Online users:.*alice.vienna.at.*tom.ch.*", T(test.util.Flag).REGEX)
+tobi.eu:            !login tobi.eu test
+>                   verify("Successfully logged in.")
 
-tom.ch:             !list
->                   verify("max.us", T(test.util.Flag).NOT)
+tobi.eu:            !list
+>                   verify(".*Online users:.*alice.vienna.at.*tobi.eu.*", T(test.util.Flag).REGEX)
 
-max.us:             !login max.us password
->                   verify("successfully logged in.")
+alice.vienna.at		!list
+>                   verify(".*Online users:.*alice.vienna.at.*tobi.eu.*", T(test.util.Flag).REGEX)
+
+tobi.eu:            !list
+>                   verify("bill.de", T(test.util.Flag).NOT)
+
+bill.de:            !login bill.de 23456
+>                   verify("Successfully logged in.")
 
 chatserver:         !users
->                   verify(".*alice.vienna.at.*online.*bill.*offline.*max.us.*online.*tom.ch.*online.*", T(test.util.Flag).REGEX)
+>                   verify(".*alice.vienna.at.*online.*asdf.*offline.*bill.de.*online.*tobi.eu.*online.*", T(test.util.Flag).REGEX)
 
 alice.vienna.at:    !list
->                   verify(".*Online users:.*alice.vienna.at.*max.us.*tom.ch.*", T(test.util.Flag).REGEX)
+>                   verify(".*Online users:.*alice.vienna.at.*bill.de.*tobi.eu.*", T(test.util.Flag).REGEX)
 
-max.us:             !logout
->                   verify("successfully logged out.")
+bill.de:            !logout
+>                   verify("Successfully logged out.")
 
 chatserver:         !users
->                   verify(".*alice.vienna.at.*online.*bill.*offline.*max.us.*offline.*tom.ch.*online.*", T(test.util.Flag).REGEX)
+>                   verify(".*alice.vienna.at.*online.*asdf.*offline.*bill.de.*offline.*tobi.eu.*online.*", T(test.util.Flag).REGEX)
 
-tom.ch:             !list
->                   verify("max.us", T(test.util.Flag).NOT)
 
-max.us:             !list
->                   verify(".*Online users:.*alice.vienna.at.*tom.ch.*", T(test.util.Flag).REGEX)
+bill.de:            !list
+>                   verify(".*Online users:.*alice.vienna.at.*tobi.eu.*", T(test.util.Flag).REGEX)
+
+tobi.eu:            !list
+>                   verify("bill.de", T(test.util.Flag).NOT)
+
+bill.de:            !list
+>                   verify("* bill.de", T(test.util.Flag).NOT)
 
 chatserver:         !exit
 alice.vienna.at:    !exit
-tom.ch:             !exit
-max.us:             !exit
+tobi.eu:            !exit
+bill.de:            !exit

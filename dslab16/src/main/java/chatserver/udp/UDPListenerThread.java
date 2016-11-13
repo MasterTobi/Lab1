@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import chatserver.Chatserver;
 
@@ -18,11 +20,12 @@ public class UDPListenerThread implements Runnable{
 	}
 
 
-
 	@Override
 	public void run() {
 		
-		while(!socket.isClosed() && !Thread.interrupted()){
+		ExecutorService pool = Executors.newFixedThreadPool(100);
+		
+		while(!socket.isClosed()){
 			try {
 				byte[] buf = new byte[1024];
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -31,15 +34,18 @@ public class UDPListenerThread implements Runnable{
 				
 				/* handle packet form client in separate thread */
 				UDPHandlerThread handlerThread = new UDPHandlerThread(packet, socket, server);
-				new Thread(handlerThread).start();
+				pool.execute(handlerThread);
 				
 			}catch(SocketException e){
 				// thrown if socket is closed
+				pool.shutdown();
 			} 
 			catch (IOException e) {
+				pool.shutdown();
 				e.printStackTrace();
 			}
 		}
+		
 		
 	}
 	

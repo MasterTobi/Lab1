@@ -1,55 +1,58 @@
 *   Chatserver  chatserver
 *   Client      alice.vienna.at
-*   Client      tom.ch
-*   Client      max.us
+*   Client      tobi.eu
+*   Client      bill.de
 
 alice.vienna.at:    !login alice.vienna.at 12345
->                   verify("successfully logged in.")
+>                   verify("Successfully logged in.")
 
-tom.ch:             !send i am not logged in
+tobi.eu:            !send msg
 >                   verify("not logged in.")
 
-tom.ch:             !login tom.ch test
->                   verify("successfully logged in.")
+tobi.eu:            !login tobi.eu test
+>                   verify("Successfully logged in.")
 
-max.us:             !login max.us password
->                   verify("successfully logged in.")
+bill.de:            !login bill.de 23456
+>                   verify("Successfully logged in.")
 
 chatserver:         !users
->                   verify(".*alice.*online.*bill.*offline.*max.*online.*tom.*online.*", T(test.util.Flag).REGEX)
+>                   verify(".*alice.*online.*asdf.*offline.*bill.*online.*tobi.*online.*", T(test.util.Flag).REGEX)
 
-tom.ch:             !send i am a message
-
-tom.ch:             !lastMsg
+tobi.eu:            !lastMsg
 >                   verify("no message received!")
 
-alice.vienna.at:    !lastMsg
->                   verify("tom.ch: i am a message")
+tobi.eu:            !send hi whats up!
 
-max.us:             !lastMsg
->                   verify("tom.ch: i am a message")
+tobi.eu:            !lastMsg
+>                   verify("No message received!")
 
-max.us:             !send i am the second message
-
-tom.ch:             !lastMsg
->                   verify("max.us: i am the second message")
+bill.de:            !lastMsg
+>                   verify("tobi.eu: hi whats up!")
 
 alice.vienna.at:    !lastMsg
->                   verify("max.us: i am the second message")
+>                   verify("tobi.eu: hi whats up!")
 
-max.us:             !lastMsg
->                   verify("tom.ch: i am a message")
+bill.de:            !send i am good thanks for asking!
 
-max.us:             !logout
+tobi.eu:            !lastMsg
+>                   verify("bill.de: i am good thanks for asking!")
+
+alice.vienna.at:    !lastMsg
+>                   verify("bill.de: i am good thanks for asking!")
+
+bill.de:            !lastMsg
+>                   verify("tobi.eu: hi whats up!")
+
+bill.de:            !logout
 >                   verify("successfully logged out.")
 
-max.us:             !send i am not logged in
+bill.de:            !send how are you?
 >                   verify("not logged in.")
 
 chatserver:         !users
->                   verify(".*alice.*online.*bill.*offline.*max.*offline.*tom.*online.*", T(test.util.Flag).REGEX)
+>                   verify(".*alice.*online.*asdf.*offline.*bill.*offline.*tobi.*online.*", T(test.util.Flag).REGEX)
 
 chatserver:         !exit
 alice.vienna.at:    !exit
-tom.ch:             !exit
-max.us:             !exit
+tobi.eu:            !exit
+bill.de:            !exit

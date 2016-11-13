@@ -63,7 +63,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 		shellThread = new Thread(shell);
 		shellThread.start();
 		
-		// create and start a new TCP ServerSocket
+		/* create and start a new TCP ServerSocket */
 		try {
 			
 			serverSocketTCP = new ServerSocket(config.getInt("tcp.port"));
@@ -81,9 +81,11 @@ public class Chatserver implements IChatserverCli, Runnable {
 			}
 		}
 		
+		/* create and start DatagramSocket */
 		try {
 			serverSocketUDP = new DatagramSocket(config.getInt("udp.port"));
 			
+			// handle incoming connections from client in a separate thread
 			UDPListenerThread udpListenerThread = new UDPListenerThread(serverSocketUDP,this);
 			new Thread(udpListenerThread).start();
 			
@@ -108,15 +110,18 @@ public class Chatserver implements IChatserverCli, Runnable {
 		for(User u: userList)
 		{
 			String status = "offline";
-			if(u.isActive())
-			{
-				status = "online";
-			}
 			
-			if(count == userList.size()){
-				userStatusList += String.format("%d. %s %s", count, u.getUsername(), status); 
-			}else{
-				userStatusList += String.format("%d. %s %s%n", count, u.getUsername(), status);
+			synchronized (u) {	
+				if(u.isActive())
+				{
+					status = "online";
+				}
+				
+				if(count == userList.size()){
+					userStatusList += String.format("%d. %s %s", count, u.getUsername(), status); 
+				}else{
+					userStatusList += String.format("%d. %s %s%n", count, u.getUsername(), status);
+				}
 			}
 			count ++;
 		}
@@ -134,7 +139,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 			{
 				if(u.getSocket() != null)
 				{
-					u.getSocket().close();
+					u.getSocket().close();	// this will throw a SocketException in the threads
 				}
 			}
 		}
@@ -144,8 +149,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 			serverSocketTCP.close();
 		}
 	
-
-		//TODO close UDP Thread
+		/* close UDP Thread */
 		if(serverSocketUDP != null){
 			serverSocketUDP.close();
 		}
@@ -173,15 +177,15 @@ public class Chatserver implements IChatserverCli, Runnable {
 			u.setUsername(username.substring(0, username.lastIndexOf('.')));
 			u.setPassword(userConfig.getString(username));
 			u.setActive(false);
+			u.setRegistered(false);
 			userList.add(u);
 		}
 		
 		/* sort list alphabetically */
-		
-		 Collections.sort(userList, new Comparator<User>() {
+		Collections.sort(userList, new Comparator<User>() {
 		        @Override
 		        public int compare(User u1, User u2) {
-		            return u1.getUsername().compareToIgnoreCase(u2.getUsername());
+		            return u1.getUsername().compareToIgnoreCase(u2.getUsername());	// compare strings
 		        }
 		    });
 	}

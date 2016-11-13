@@ -12,10 +12,15 @@ chatserver:			!users
 >					verify(".*alice.*online.*bill.*online.*", T(test.util.Flag).REGEX)
 
 alice.vienna.at:	!send Hallo mein name ist alice
->					verify("name")
 
 bill.de:			!send Servus alice
->					verify("alice")
+
+bill.de:			!lastMsg
+>					verify("alice.vienna.at: Hallo mein name ist alice")
+
+alice.vienna.at:	!lastMsg
+>					verify("bill.de: Servus alice")
+
 
 chatserver: 		!exit
 alice.vienna.at:	!exit

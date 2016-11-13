@@ -20,15 +20,14 @@ public class TCPHandlerThread implements Runnable{
 	private PrintWriter writer;
 
 	public TCPHandlerThread(Socket socket, Chatserver chatserver) {
-		this.socket = socket;
-		
+		this.socket = socket;	// socket for communicating with client
 		commandHandler = new CommandHandler(chatserver);
 	}
 
 	@Override
 	public void run() {
 		
-		try {	// try with resources
+		try {
 			// prepare the input reader for the socket
 			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			// prepare the writer for responding to clients requests
@@ -43,6 +42,8 @@ public class TCPHandlerThread implements Runnable{
 				
 				if(parts.length >= 1)
 				{
+					/* NOTE: the client checks if he is already logged in and if so he will not send a login request */
+					
 					/* login command */
 					if (request.startsWith("!login") && parts.length == 3) {
 						
@@ -51,16 +52,19 @@ public class TCPHandlerThread implements Runnable{
 						boolean alreadyLoggedIn = false;
 						
 						user = commandHandler.getUser(username);
+						
+						/* check if the user with the username sent by the client is already logged in */
 						if(user != null){
 							alreadyLoggedIn = user.isActive();
 						}
 						
+						/* create and send response to server */
 						write(commandHandler.login(username,password, socket));
 						
 						/* if login wasn't successful then close socket */
 						if(user == null || alreadyLoggedIn || user.isActive() == false)
 						{
-							socket.close();
+							socket.close();	// will end loop and therefore thread
 						}
 					}
 					
@@ -68,7 +72,7 @@ public class TCPHandlerThread implements Runnable{
 					else if (request.startsWith("!logout"))
 					{	
 						write(commandHandler.logout(user));
-						socket.close();
+						socket.close();	// will end loop and therefore thread
 					}
 					
 					/* send command*/
@@ -90,7 +94,7 @@ public class TCPHandlerThread implements Runnable{
 					{	
 						String[] connectionParts = parts[1].split(":");
 						String address = connectionParts[0];
-						int port = Integer.parseInt(connectionParts[1]);
+						int port = Integer.parseInt(connectionParts[1]);	// client makes sure that port is an integer
 						
 						write(commandHandler.register(user, address, port));
 					}
@@ -111,14 +115,14 @@ public class TCPHandlerThread implements Runnable{
 			// thrown if socket is closed
 		}
 		catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
 	private void write(String message)
 	{
-		synchronized (socket) {	// make sure that a command response and a public message is not sent simultaneously 
+		synchronized (socket) // make sure that a command response and a public message is not sent simultaneously 
+		{	
 			writer.println(message);
 		}
 	}

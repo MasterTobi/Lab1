@@ -1,57 +1,57 @@
 *   Chatserver  chatserver
 *   Client      alice.vienna.at
-*   Client      tom.ch
-*   Client      max.us
+*   Client      tobi.eu
+*   Client      bill.de
 
 alice.vienna.at:    !login alice.vienna.at 12345
->                   verify("successfully logged in.")
+>                   verify("Successfully logged in.")
 
-tom.ch:             !msg test test
->                   verify("not logged in.")
+tobi.eu:            !msg user msg
+>                   verify("Not logged in.")
 
-tom.ch:             !login tom.ch test
->                   verify("successfully logged in.")
+tobi.eu:            !login tobi.eu test
+>                   verify("Successfully logged in.")
 
-max.us:             !login max.us password
->                   verify("successfully logged in.")
+bill.de:            !login bill.de 23456
+>                   verify("Successfully logged in.")
 
 chatserver:         !users
->                   verify(".*alice.*online.*bill.*offline.*max.*online.*tom.*online.*", T(test.util.Flag).REGEX)
+>                   verify(".*alice.*online.*asdf.*offline.*bill.*online.*tobi.*online.*", T(test.util.Flag).REGEX)
 
-tom.ch:             !msg test test
->                   verify("wrong username or user not reachable.")
+tobi.eu:            !msg xxx hi whats up
+>                   verify("Wrong username or user not reachable.")
 
-tom.ch:             !msg max.us hallo max!
->                   verify("wrong username or user not reachable.")
+tobi.eu:            !msg bill.de hi bill what's up!
+>                   verify("Wrong username or user not reachable.")
 
-max.us:             !register localhost:4444
->                   verify("successfully registered address for max.us.")
+bill.de:            !register localhost:7777
+>                   verify("Successfully registered address for bill.de.")
 
-alice.vienna.at:    !lookup max.us
->                   verify("localhost:4444")
+alice.vienna.at:    !lookup bill.de
+>                   verify("localhost:7777")
 
-tom.ch:             !msg max.us hey max!
->                   verify("max.us replied with !ack.")
+tobi.eu:            !msg bill.de i check if something is going wrong
+>                   verify("localhost:7777", T(test.util.Flag).NOT)
 
-alice.vienna.at:    !msg max.us i like your hair!
->                   verify("max.us replied with !ack.")
+alice.vienna.at:    !msg bill.de hi im alice and who are you?
+>                   verify("bill.de replied with !ack.")
 
-tom.ch:             !msg max.us waddup?!
->                   verify("localhost:4444", T(test.util.Flag).NOT)
+tobi.eu:            !msg bill.de hi bill what's up!
+>                   verify("bill.de replied with !ack.")
 
-max.us:             !logout
+bill.de:            !logout
 >                   verify("successfully logged out.")
 
-max.us:             !msg test test
->                   verify("not logged in.")
-
-alice.vienna.at:    !msg max.us still online?
+alice.vienna.at:    !msg bill.de hi again its alice
 >                   verify("wrong username or user not reachable.")
 
+bill.de:            !msg tobi.eu hi tobi
+>                   verify("not logged in.")
+
 chatserver:         !users
->                   verify(".*alice.*online.*bill.*offline.*max.*offline.*tom.*online.*", T(test.util.Flag).REGEX)
+>                   verify(".*alice.*online.*asdf.*offline.*bill.*offline.*tobi.*online.*", T(test.util.Flag).REGEX)
 
 chatserver:         !exit
 alice.vienna.at:    !exit
-tom.ch:             !exit
-max.us:             !exit
+tobi.eu:            !exit
+bill.de:            !exit

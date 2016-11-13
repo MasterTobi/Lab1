@@ -83,6 +83,7 @@ public class Client implements IClientCli, Runnable {
 	@Command
 	public String login(String username, String password) throws IOException {
 		
+		/* check if user is already logged in and if so do not send login command to server (save resources) */
 		if(isLoggedIn())
 		{
 			return ALREADY_LOGGED_IN;
@@ -90,7 +91,7 @@ public class Client implements IClientCli, Runnable {
 		
 		createTcpServerSocket();
 		
-		// if createTcpServerSocket was not successfull
+		// if createTcpServerSocket was not successful
 		if(tcpSocket == null)
 		{
 			return null;
@@ -123,7 +124,7 @@ public class Client implements IClientCli, Runnable {
 		
 		String response  = waitForResponse(commandResponseQueue);
 		
-		tcpSocket.close();
+		tcpSocket.close();	// will also close in and output stream
 		
 		return response;
 	}
@@ -189,6 +190,7 @@ public class Client implements IClientCli, Runnable {
 		
 		String parts[] = lookupResponse.split(":");
 		
+		/* open thread to send private message to other user */
 		privateTcpWriter = new PrivateTcpWriterThread(message, username, parts[0], Integer.parseInt(parts[1]), shell);
 		Thread privateWriterThread = new Thread(privateTcpWriter);
 		privateWriterThread.start();
@@ -228,6 +230,7 @@ public class Client implements IClientCli, Runnable {
 			return PRIVATE_ADDRESS_INCORRECT;
 		}
 		
+		/* check if port is a number and in range */
 		try{
 			port = Integer.parseInt(parts[1]);
 			if(port < 0 || port > 65535){
@@ -249,7 +252,7 @@ public class Client implements IClientCli, Runnable {
 			privateTcpListner.close();
 		}
 	
-		/* setup Listener for private messages */
+		/* start listener for private messages */
 		privateTcpListner = new PrivateTcpListnerThread(port,shell);
 		Thread privateListenerThread = new Thread(privateTcpListner);
 		privateListenerThread.start();
@@ -285,14 +288,6 @@ public class Client implements IClientCli, Runnable {
 	public String exit() throws IOException {
 		
 		logout();	// logout also close tcpSocket
-		
-		if(serverReader != null){
-			serverReader.close();
-		}
-		
-		if(serverWriter != null){
-			serverWriter.close();
-		}
 		
 		if(privateTcpListner != null)
 		{
@@ -331,7 +326,7 @@ public class Client implements IClientCli, Runnable {
 			// create a writer to send messages to the server
 			serverWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
 			
-			/* start thread for messages from the server */
+			/* start thread for listening to messages from the server */
 			PublicTcpListenerThread publicListener = new PublicTcpListenerThread(tcpSocket, serverReader, publicMessageQueue, commandResponseQueue, shell);
 			Thread publicListenerThread = new Thread(publicListener);
 			publicListenerThread.start();

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import chatserver.Chatserver;
 
@@ -19,6 +21,8 @@ public class TCPListenerThread implements Runnable {
 
 	public void run() {
 		
+		ExecutorService pool = Executors.newFixedThreadPool(100); // provide up to 100 threads for client communication, if all threads are used the request has to wait
+		
 		while (!serverSocket.isClosed()) {
 			
 			Socket socket = null;
@@ -27,14 +31,15 @@ public class TCPListenerThread implements Runnable {
 				// wait for Client to connect
 				socket = serverSocket.accept();
 				// start new thread that handles client requests
-				new Thread(new TCPHandlerThread(socket,chatserver)).start();
+				pool.execute(new TCPHandlerThread(socket,chatserver));
 			}
 			catch(SocketException e)
 			{
 				// thrown if socket is closed
+				pool.shutdown();	// no now tasks will be accepted
 			}
 			catch (IOException e) {
-				// TODO Auto-generated catch block
+				pool.shutdown();	
 				e.printStackTrace();
 			}
 		}

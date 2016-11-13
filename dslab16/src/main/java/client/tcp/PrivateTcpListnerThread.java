@@ -66,7 +66,7 @@ public class PrivateTcpListnerThread implements Runnable{
 	
 	public void close(){
 		try {
-			if(privateServerSocket != null){
+			if(privateServerSocket != null && !privateServerSocket.isClosed()){
 				privateServerSocket.close();
 			}
 		} catch (IOException e) {

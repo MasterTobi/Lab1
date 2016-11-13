@@ -27,12 +27,11 @@ public class UDPHandlerThread implements Runnable {
 	@Override
 	public void run() {
 	
-		InetAddress address = packet.getAddress();
-		int port = packet.getPort();
+		InetAddress address = packet.getAddress();	// address of the client
+		int port = packet.getPort();	// port of the client
 		String request = new String(packet.getData());
 		
 		String response;
-		
 		
 		if(request.startsWith("!list")){
 			

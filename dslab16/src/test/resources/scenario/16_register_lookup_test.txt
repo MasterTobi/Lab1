@@ -1,60 +1,60 @@
 *   Chatserver  chatserver
 *   Client      alice.vienna.at
-*   Client      tom.ch
-*   Client      max.us
+*   Client      tobi.eu
+*   Client      bill.de
 
 alice.vienna.at:    !login alice.vienna.at 12345
->                   verify("successfully logged in.")
+>                   verify("Successfully logged in.")
 
-tom.ch:             !register localhost:4444
+tobi.eu:            !register localhost:7777
 >                   verify("not logged in.")
 
-tom.ch:             !login tom.ch test
->                   verify("successfully logged in.")
+tobi.eu:            !login tobi.eu test
+>                   verify("Successfully logged in.")
 
-max.us:             !lookup tom.ch
+bill.de:            !lookup tobi.eu
 >                   verify("not logged in.")
 
-max.us:             !login max.us password
->                   verify("successfully logged in.")
+bill.de:            !login bill.de 23456
+>                   verify("Successfully logged in.")
 
 chatserver:         !users
->                   verify(".*alice.*online.*bill.*offline.*max.*online.*tom.*online.*", T(test.util.Flag).REGEX)
+>                   verify(".*alice.*online.*asdf.*offline.*bill.*online.*tobi.*online.*", T(test.util.Flag).REGEX)
 
-alice.vienna.at:    !lookup notauser
->                   verify("wrong username or user not registered.")
+alice.vienna.at:    !lookup xxx
+>                   verify("Wrong username or user not registered.")
 
-alice.vienna.at:    !lookup tom.ch
->                   verify("wrong username or user not registered.")
+alice.vienna.at:    !lookup tobi.eu
+>                   verify("Wrong username or user not registered.")
 
-tom.ch:             !register localhost:4444
->                   verify("successfully registered address for tom.ch.")
+tobi.eu:            !register localhost:7777
+>                   verify("Successfully registered address for tobi.eu.")
 
-alice.vienna.at:    !lookup tom.ch
->                   verify("localhost:4444")
+alice.vienna.at:    !lookup tobi.eu
+>                   verify("localhost:7777")
 
-max.us:             !lookup tom.ch
->                   verify("localhost:4444")
+bill.de:            !lookup tobi.eu
+>                   verify("localhost:7777")
 
-max.us:             !register localhost:5555
->                   verify("successfully registered address for max.us.")
+bill.de:            !register localhost:8888
+>                   verify("Successfully registered address for bill.de.")
 
-tom.ch:             !lookup max.us
->                   verify("localhost:5555")
+tobi.eu:            !lookup bill.de
+>                   verify("localhost:8888")
 
-max.us:             !logout
->                   verify("successfully logged out.")
+bill.de:            !logout
+>                   verify("Successfully logged out.")
 
-max.us:             !lookup tom.ch
->                   verify("not logged in.")
+bill.de:            !lookup tobi.eu
+>                   verify("Not logged in.")
 
-tom.ch:             !lookup max.us
->                   verify("wrong username or user not registered.")
+tobi.eu:            !lookup bill.de
+>                   verify("Wrong username or user not registered.")
 
 chatserver:         !users
->                   verify(".*alice.*online.*bill.*offline.*max.*offline.*tom.*online.*", T(test.util.Flag).REGEX)
+>                   verify(".*alice.*online.*asdf.*offline.*bill.*offline.*tobi.*online.*", T(test.util.Flag).REGEX)
 
 chatserver:         !exit
 alice.vienna.at:    !exit
-tom.ch:             !exit
-max.us:             !exit
+tobi.eu:            !exit
+bill.de:            !exit
