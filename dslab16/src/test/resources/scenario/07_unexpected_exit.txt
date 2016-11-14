@@ -15,6 +15,21 @@ alice.vienna.at:	!lookup alice.vienna.at
 alice.vienna.at:	!login alice.vienna.at 12345
 >					verify("Could not establish connection.")
 
+alice.vienna.at:	!send whats up
+>					verify("Not logged in.")
+
+alice.vienna.at:	!register localhost:1234
+>					verify("Not logged in.")
+
+alice.vienna.at:	!lookup allice.vienna.at
+>					verify("Not logged in.")
+
+alice.vienna.at:	!msg bill.de whats up?!
+>					verify("Not logged in.")
+
+alice.vienna.at:	!lastMsg
+>					verify("Not logged in.")
+
 alice.vienna.at:	!list
 >					verify("")
 

@@ -21,7 +21,7 @@ public class TCPListenerThread implements Runnable {
 
 	public void run() {
 		
-		ExecutorService pool = Executors.newFixedThreadPool(100); // provide up to 100 threads for client communication, if all threads are used the request has to wait
+		ExecutorService pool = Executors.newCachedThreadPool();
 		
 		while (!serverSocket.isClosed()) {
 			

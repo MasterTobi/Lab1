@@ -1,15 +1,15 @@
 *	Chatserver	chatserver
 *	Client		alice.vienna.at
-*	Client		bill.de
+*	Client		tobi.eu
 
 alice.vienna.at:	!login alice.vienna.at 12345
 >					verify("success")
 
-alice.vienna.at:	!register asdlkfjlas
->					verify("PrivateAddress is not correct!")
-
 alice.vienna.at:	!register 127.0.0.1:65536
 >					verify("Port value out of range!")
+
+alice.vienna.at:	!register xxxxxx
+>					verify("PrivateAddress is not correct!")
 
 alice.vienna.at:	!register 127.0.0.1:-1
 >					verify("Port value out of range!")
@@ -32,28 +32,27 @@ alice.vienna.at:	!register 127.0.0.1:0
 alice.vienna.at:	!lookup alice.vienna.at
 >					verify("127.0.0.1:0")
 
-alice.vienna.at:	!register 127.0.0.1:7777
+alice.vienna.at:	!register 127.0.0.1:4444
 >					verify("Successfully registered address for alice.vienna.at.")
 
 alice.vienna.at:	!lookup alice.vienna.at
->					verify("127.0.0.1:7777")
+>					verify("127.0.0.1:4444")
 
+tobi.eu:			!login tobi.eu test
+>					verify("Successfully logged in.")
 
-bill.de:			!login bill.de 23456
->					verify("success")
+tobi.eu:			!register wront_ip:8888
+>					verify("Successfully registered address for tobi.eu.")
 
-bill.de:			!register not_a_address:1238
->					verify("Successfully registered address for bill.de.")
-
-bill.de:			!msg alice.vienna.at hi its bill
+tobi.eu:			!msg alice.vienna.at hi its bill
 >					verify("hi its bill")
 
-alice.vienna.at:	!msg bill.de hi its alice
-# message will come after some time >					verify("not_a_address is an unknown host!")
+alice.vienna.at:	!msg tobi.eu hi its alice
+# message will come after some time >					verify("wront_ip is an unknown host!")
 
-bill.de:			!register 127.0.0.1:7777
->					verify("Successfully registered address for bill.de.")
+tobi.eu:			!register 127.0.0.1:7777
+>					verify("Successfully registered address for tobi.eu.")
 
 chatserver: 		!exit
 alice.vienna.at:	!exit
-bill.de:			!exit
+tobi.eu:			!exit

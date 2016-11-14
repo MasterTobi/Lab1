@@ -93,6 +93,7 @@ public class CommandHandler {
 						synchronized (u.getSocket()) {	
 							writerForUser.format("%s%s: %s%n",PUBLIC_MESSAGE_PREFIX, user.getUsername(), message);
 						}
+						/* do not close stream at this point otherwise further communication will fail */
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

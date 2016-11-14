@@ -23,7 +23,10 @@ public class UDPListenerThread implements Runnable{
 	@Override
 	public void run() {
 		
-		ExecutorService pool = Executors.newFixedThreadPool(100);
+		/* pool will cache finished threads for 60s and reuse them if a new task comes in
+		 * Use CachedThreadPool because at this point we have many short-lived tasks 
+		 */
+		ExecutorService pool = Executors.newCachedThreadPool();
 		
 		while(!socket.isClosed()){
 			try {
