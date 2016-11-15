@@ -27,7 +27,7 @@ public class CommandHandler {
 
 	public String login(String username, String password, Socket socket){
 		
-		for(User u:chatserver.GetUserList())
+		for(User u:chatserver.getUserList())
 		{
 			synchronized(u){	// for example necessary if two users log in simultaneously with the same username
 				if(u.getUsername().equals(username))
@@ -58,7 +58,7 @@ public class CommandHandler {
 	
 	public User getUser(String username)
 	{
-		for(User u:chatserver.GetUserList())
+		for(User u:chatserver.getUserList())
 		{
 			if(u.getUsername().equals(username))
 			{
@@ -80,7 +80,7 @@ public class CommandHandler {
 	}
 	
 	public void send(String message, User user){
-		for(User u:chatserver.GetUserList())
+		for(User u:chatserver.getUserList())
 		{
 			synchronized (u) {
 				
@@ -104,7 +104,7 @@ public class CommandHandler {
 	
 	public String lookup(String username){
 
-		for(User u:chatserver.GetUserList())
+		for(User u:chatserver.getUserList())
 		{
 			synchronized (u) {
 				if(u.isRegistered() && u.getUsername().equals(username))
@@ -133,9 +133,11 @@ public class CommandHandler {
 
 		String onlineList = "Online users:";
 		
-		for(User u: chatserver.GetUserList()){
-			if(u.isActive()){
-			onlineList += String.format("%n* %s", u.getUsername());
+		for(User u: chatserver.getUserList()){
+			synchronized (u) {
+				if(u.isActive()){
+					onlineList += String.format("%n* %s", u.getUsername());
+				}	
 			}
 		}
 		

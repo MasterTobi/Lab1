@@ -50,7 +50,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 		this.userResponseStream = userResponseStream;
 
 		
-		getAllUsers();
+		createUserList();
 		
 		shell = new Shell(componentName, userRequestStream, userResponseStream);
 		shell.register(this);
@@ -144,12 +144,12 @@ public class Chatserver implements IChatserverCli, Runnable {
 			}
 		}
 		
-		/* close TCP thread */
+		/* close tcp server socket => tcp listener thread will terminate */
 		if(serverSocketTCP != null){
 			serverSocketTCP.close();
 		}
 	
-		/* close UDP Thread */
+		/* close udp server socket => udp listener thread and udp handler thread will terminate */
 		if(serverSocketUDP != null){
 			serverSocketUDP.close();
 		}
@@ -165,7 +165,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 	}
 	
 	
-	private void getAllUsers()
+	private void createUserList()
 	{
 		Config userConfig = new Config("user");
 		
@@ -190,7 +190,7 @@ public class Chatserver implements IChatserverCli, Runnable {
 		    });
 	}
 	
-	public List<User> GetUserList()
+	public List<User> getUserList()
 	{
 		return userList;
 	}

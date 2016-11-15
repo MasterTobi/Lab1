@@ -15,7 +15,6 @@ import cli.Shell;
 public class PrivateTcpListnerThread implements Runnable{
 
 	private ServerSocket privateServerSocket;
-	private PrintStream userResponseStream;
 	private int port;
 	private Shell shell;
 	
@@ -27,8 +26,8 @@ public class PrivateTcpListnerThread implements Runnable{
 	
 	@Override
 	public void run() {
+		
 		try {
-			
 			privateServerSocket = new ServerSocket(port);
 			
 			while (!privateServerSocket.isClosed() && !Thread.interrupted()) {
@@ -53,7 +52,6 @@ public class PrivateTcpListnerThread implements Runnable{
 					e.printStackTrace();
 				}
 			}
-			
 		}
 		catch (SocketException e)
 		{

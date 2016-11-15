@@ -159,14 +159,14 @@ public class Client implements IClientCli, Runnable {
 			DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
 					InetAddress.getByName(config.getString("chatserver.host")), config.getInt("chatserver.udp.port"));
 			
-			udpSocket.send(packet);	// send udp packet to server
+			udpSocket.send(packet);	// send udp packet to server (connectionless => it is not ensured that server is available)
 			
 			// start thread to listen to server response
 			PublicUdpListenerThread udpListnerThread = new PublicUdpListenerThread(shell, udpSocket);
 			new Thread(udpListnerThread).start();
 		}
 		catch(IOException e){
-			// connection not possible
+			
 		}
 	
 		return null;

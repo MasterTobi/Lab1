@@ -35,7 +35,7 @@ public class PublicTcpListenerThread implements Runnable{
 		String message;
 		
 		try {
-			while((message = serverReader.readLine()) != null)
+			while((message = serverReader.readLine()) != null)	// will read null if server terminates
 			{	
 				
 				if(message.startsWith(COMMAND_RESPONSE_PREFIX))

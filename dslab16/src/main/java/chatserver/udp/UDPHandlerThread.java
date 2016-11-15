@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 
 import chatserver.Chatserver;
 import chatserver.CommandHandler;
@@ -44,10 +45,13 @@ public class UDPHandlerThread implements Runnable {
 		
 		byte[] buf = response.getBytes();
 		packet = new DatagramPacket(buf,buf.length,address,port);
-		
+
 		try {
 			socket.send(packet);
-		} catch (IOException e) {
+		} catch(SocketException e){
+			// thrown if socket closed
+		} 
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 	}

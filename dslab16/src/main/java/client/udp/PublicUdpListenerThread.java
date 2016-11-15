@@ -29,11 +29,6 @@ public class PublicUdpListenerThread implements Runnable{
 			packet = new DatagramPacket(buffer, buffer.length);
 			
 			socket.receive(packet);	// wait for server response
-			/*System.out.println("buffer: " + buffer.length);
-			
-			byte[] buffer = Arrays.copyOf(buffer, packet.getLength());	// cut off empty bytes
-			System.out.println("length: " + packet.getLength());
-			System.out.println("buffer: " + buffer.length);*/
 			
 			String message = new String(Arrays.copyOf(buffer, packet.getLength()));
 			if(message.startsWith(COMMAND_RESPONSE_PREFIX))
