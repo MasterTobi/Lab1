@@ -10,7 +10,9 @@ import java.net.ConnectException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -33,7 +35,7 @@ public class Client implements IClientCli, Runnable {
 	private PrintStream userResponseStream;
 	private BufferedReader serverReader;
 	private PrintWriter serverWriter;
-	private PrivateTcpListnerThread privateTcpListner;
+	private ServerSocket privateTcpServerSocket;
 	private PrivateTcpWriterThread privateTcpWriter;
 	private List<String> publicMessageQueue;
 	private List<String> commandResponseQueue;
@@ -47,6 +49,7 @@ public class Client implements IClientCli, Runnable {
 	private final String NOT_LOGGED_IN = "Not logged in.";
 	private final String SUCESSFULLY_LOGGED_IN = "Successfully logged in.";
 	private final String ALREADY_LOGGED_IN = "Already logged in.";
+	private final String COULD_NOT_OPEN_SOCKET = "Could not open socket!";
 	
 
 	/**
@@ -233,7 +236,8 @@ public class Client implements IClientCli, Runnable {
 		/* check if port is a number and in range */
 		try{
 			port = Integer.parseInt(parts[1]);
-			if(port < 0 || port > 65535){
+			if(port <= 0 || port > 65535)	// port number of 0 means that the port number is automatically allocated this does not make sense at this point
+			{
 				return PORT_OUT_OF_RANGE;
 			}
 		}
@@ -242,18 +246,28 @@ public class Client implements IClientCli, Runnable {
 			return PORT_NOT_A_NUMBER;
 		}
 		
+		try{
+			ServerSocket newPrivateTcpServerSocket = new ServerSocket(port); // try to open new server socket
+			
+			// if successful then
+			
+			/* if user has already registered a address then close old public listener */
+			if(privateTcpServerSocket != null)
+			{
+				privateTcpServerSocket.close();
+			}
+			privateTcpServerSocket = newPrivateTcpServerSocket;
+		}
+		catch(SocketException e){
+			return COULD_NOT_OPEN_SOCKET;
+		}
+		
 		serverWriter.format("!register %s%n",privateAddress);
 		
 		String response = waitForResponse(commandResponseQueue);
-		
-		/* if user has already registered a address then close old public listener */
-		if(privateTcpListner != null)
-		{
-			privateTcpListner.close();
-		}
 	
 		/* start listener for private messages */
-		privateTcpListner = new PrivateTcpListnerThread(port,shell);
+		PrivateTcpListnerThread privateTcpListner = new PrivateTcpListnerThread(privateTcpServerSocket,shell);
 		Thread privateListenerThread = new Thread(privateTcpListner);
 		privateListenerThread.start();
 		
@@ -289,9 +303,9 @@ public class Client implements IClientCli, Runnable {
 		
 		logout();	// logout also close tcpSocket
 		
-		if(privateTcpListner != null)
+		if(privateTcpServerSocket != null)
 		{
-			privateTcpListner.close();
+			privateTcpServerSocket.close();
 		}
 		
 		if(privateTcpWriter != null)
