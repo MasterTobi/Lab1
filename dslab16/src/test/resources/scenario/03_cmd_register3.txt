@@ -3,7 +3,7 @@
 *	Client		tobi.eu
 
 alice.vienna.at:	!login alice.vienna.at 12345
->					verify("success")
+>					verify("Successfully logged in.")
 
 tobi.eu:			!login tobi.eu test
 >					verify("Successfully logged in.")
@@ -17,6 +17,12 @@ tobi.eu:			!register 127.0.0.1:7777
 alice.vienna.at:	!register 127.0.0.1:7777
 >					verify("Could not open socket!")
 
+tobi.eu:			!lookup tobi.eu
+>					verify("127.0.0.1:7777")
+
+alice.vienna.at:	!lookup tobi.eu
+>					verify("127.0.0.1:7777")
+
 tobi.eu:			!lookup alice.vienna.at
 >					verify("Wrong username or user not registered.")
 
@@ -26,7 +32,13 @@ alice.vienna.at:	!register 127.0.0.1:8888
 tobi.eu:			!lookup alice.vienna.at
 >					verify("127.0.0.1:8888")
 
-tobi.eu:			!msg alice.vienna.at hi alice
+tobi.eu:			!msg alice.vienna.at msg to alice1!
+>					verify("alice.vienna.at replied with !ack.")
+
+tobi.eu:			!msg alice.vienna.at msg to alice2!
+>					verify("alice.vienna.at replied with !ack.")
+
+tobi.eu:			!msg alice.vienna.at msg to alice3!
 >					verify("alice.vienna.at replied with !ack.")
 
 alice.vienna.at:	!msg tobi.eu hi tobi
